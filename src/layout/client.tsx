@@ -1,4 +1,5 @@
 import { Outlet } from '@tanstack/react-router';
+import TestComponent from '@/components/molecules/test.component';
 
 export default function ClientLayout() {
     return (
@@ -17,10 +18,19 @@ export default function ClientLayout() {
                         />
                     </div>
 
+                    <TestComponent />
                     <div className="flex items-center gap-x-3"></div>
                 </div>
             </header>
             <Outlet />
+
+            {/* footer */}
+            <footer className="mt-4 text-center text-gray-500 text-sm">
+                <p>
+                    &copy; {new Date().getFullYear()} Your Company Name. All
+                    rights reserved.
+                </p>
+            </footer>
         </div>
     );
 }
