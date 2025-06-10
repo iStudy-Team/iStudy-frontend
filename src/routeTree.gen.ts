@@ -11,13 +11,13 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as ClientImport } from './routes/client'
+import { Route as ClientClientImport } from './routes/client/client'
 
 // Create/Update Routes
 
-const ClientRoute = ClientImport.update({
-  id: '/client',
-  path: '/client',
+const ClientClientRoute = ClientClientImport.update({
+  id: '/client/client',
+  path: '/client/client',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -25,11 +25,11 @@ const ClientRoute = ClientImport.update({
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/client': {
-      id: '/client'
-      path: '/client'
-      fullPath: '/client'
-      preLoaderRoute: typeof ClientImport
+    '/client/client': {
+      id: '/client/client'
+      path: '/client/client'
+      fullPath: '/client/client'
+      preLoaderRoute: typeof ClientClientImport
       parentRoute: typeof rootRoute
     }
   }
@@ -38,33 +38,33 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-  '/client': typeof ClientRoute
+  '/client/client': typeof ClientClientRoute
 }
 
 export interface FileRoutesByTo {
-  '/client': typeof ClientRoute
+  '/client/client': typeof ClientClientRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/client': typeof ClientRoute
+  '/client/client': typeof ClientClientRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/client'
+  fullPaths: '/client/client'
   fileRoutesByTo: FileRoutesByTo
-  to: '/client'
-  id: '__root__' | '/client'
+  to: '/client/client'
+  id: '__root__' | '/client/client'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  ClientRoute: typeof ClientRoute
+  ClientClientRoute: typeof ClientClientRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  ClientRoute: ClientRoute,
+  ClientClientRoute: ClientClientRoute,
 }
 
 export const routeTree = rootRoute
@@ -77,11 +77,11 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/client"
+        "/client/client"
       ]
     },
-    "/client": {
-      "filePath": "client.tsx"
+    "/client/client": {
+      "filePath": "client/client.tsx"
     }
   }
 }
