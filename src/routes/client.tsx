@@ -1,17 +1,24 @@
-import { createRoute } from "@tanstack/react-router";
-import { rootRoute } from "@/routes/__root.tsx";
-import ClientLayout from "@/layout/client";
+import { createRoute } from '@tanstack/react-router';
+import { rootRoute } from '@/routes/__root.tsx';
+import ClientLayout from '@/layout/client';
+import HomePage from '@/pages/home';
+import JumpStartPage from '@/pages/jumpStart';
 
 const _clientRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  id: 'client',
-  component: () => <ClientLayout />,
+    getParentRoute: () => rootRoute,
+    id: 'client',
+    component: () => <ClientLayout />,
 });
 
 export const clientRoute = _clientRoute.addChildren([
     createRoute({
         getParentRoute: () => _clientRoute,
         path: '/',
-        component: () => <div className="p-2"><h3>Hẹ hẹ hẹ</h3></div>,
-    })
+        component: () => <HomePage />,
+    }),
+    createRoute({
+        getParentRoute: () => _clientRoute,
+        path: '/tieng-anh-mam-non-3-6-tuoi',
+        component: () => <JumpStartPage />,
+    }),
 ]);

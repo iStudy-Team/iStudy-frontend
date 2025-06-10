@@ -12,8 +12,6 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as ClientImport } from './routes/client'
-import { Route as ClientJumpStartCourseImport } from './routes/client/jumpStartCourse'
-import { Route as ClientClientImport } from './routes/client/client'
 
 // Create/Update Routes
 
@@ -21,18 +19,6 @@ const ClientRoute = ClientImport.update({
   id: '/client',
   path: '/client',
   getParentRoute: () => rootRoute,
-} as any)
-
-const ClientJumpStartCourseRoute = ClientJumpStartCourseImport.update({
-  id: '/jumpStartCourse',
-  path: '/jumpStartCourse',
-  getParentRoute: () => ClientRoute,
-} as any)
-
-const ClientClientRoute = ClientClientImport.update({
-  id: '/client',
-  path: '/client',
-  getParentRoute: () => ClientRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -46,72 +32,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientImport
       parentRoute: typeof rootRoute
     }
-    '/client/client': {
-      id: '/client/client'
-      path: '/client'
-      fullPath: '/client/client'
-      preLoaderRoute: typeof ClientClientImport
-      parentRoute: typeof ClientImport
-    }
-    '/client/jumpStartCourse': {
-      id: '/client/jumpStartCourse'
-      path: '/jumpStartCourse'
-      fullPath: '/client/jumpStartCourse'
-      preLoaderRoute: typeof ClientJumpStartCourseImport
-      parentRoute: typeof ClientImport
-    }
   }
 }
 
 // Create and export the route tree
 
-interface ClientRouteChildren {
-  ClientClientRoute: typeof ClientClientRoute
-  ClientJumpStartCourseRoute: typeof ClientJumpStartCourseRoute
-}
-
-const ClientRouteChildren: ClientRouteChildren = {
-  ClientClientRoute: ClientClientRoute,
-  ClientJumpStartCourseRoute: ClientJumpStartCourseRoute,
-}
-
-const ClientRouteWithChildren =
-  ClientRoute._addFileChildren(ClientRouteChildren)
-
 export interface FileRoutesByFullPath {
-  '/client': typeof ClientRouteWithChildren
-  '/client/client': typeof ClientClientRoute
-  '/client/jumpStartCourse': typeof ClientJumpStartCourseRoute
+  '/client': typeof ClientRoute
 }
 
 export interface FileRoutesByTo {
-  '/client': typeof ClientRouteWithChildren
-  '/client/client': typeof ClientClientRoute
-  '/client/jumpStartCourse': typeof ClientJumpStartCourseRoute
+  '/client': typeof ClientRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/client': typeof ClientRouteWithChildren
-  '/client/client': typeof ClientClientRoute
-  '/client/jumpStartCourse': typeof ClientJumpStartCourseRoute
+  '/client': typeof ClientRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/client' | '/client/client' | '/client/jumpStartCourse'
+  fullPaths: '/client'
   fileRoutesByTo: FileRoutesByTo
-  to: '/client' | '/client/client' | '/client/jumpStartCourse'
-  id: '__root__' | '/client' | '/client/client' | '/client/jumpStartCourse'
+  to: '/client'
+  id: '__root__' | '/client'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  ClientRoute: typeof ClientRouteWithChildren
+  ClientRoute: typeof ClientRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  ClientRoute: ClientRouteWithChildren,
+  ClientRoute: ClientRoute,
 }
 
 export const routeTree = rootRoute
@@ -128,19 +81,7 @@ export const routeTree = rootRoute
       ]
     },
     "/client": {
-      "filePath": "client.tsx",
-      "children": [
-        "/client/client",
-        "/client/jumpStartCourse"
-      ]
-    },
-    "/client/client": {
-      "filePath": "client/client.tsx",
-      "parent": "/client"
-    },
-    "/client/jumpStartCourse": {
-      "filePath": "client/jumpStartCourse.tsx",
-      "parent": "/client"
+      "filePath": "client.tsx"
     }
   }
 }

@@ -1,7 +1,7 @@
 import Video from '@/components/molecules/jumpStartCourse/video';
 import ILAAboutSection from '@/components/molecules/jumpStartCourse/iLAAboutSection';
 
-export default function JumpStartLayout() {
+export default function JumpStartPage() {
     console.log('Layout rendered');
     return (
         <div className="min-h-screen ">

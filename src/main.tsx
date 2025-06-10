@@ -1,8 +1,8 @@
 import { StrictMode } from 'react';
 import './index.css';
 import ReactDOM from 'react-dom/client';
-import { RouterProvider, createRouter, createRoute } from '@tanstack/react-router';
-import { clientRoute } from '@/routes/client/client';
+import { RouterProvider, createRouter } from '@tanstack/react-router';
+import { clientRoute } from '@/routes/client';
 import { rootRoute } from '@/routes/__root.tsx';
 
 const routeTree = rootRoute.addChildren([clientRoute]);
