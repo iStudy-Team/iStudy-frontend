@@ -1,14 +1,17 @@
 import { createRoute } from "@tanstack/react-router";
 import { rootRoute } from "@/routes/__root.tsx";
+import ClientLayout from "@/layout/client";
 
-export const clientRoute = createRoute({
+const _clientRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/client",
-  component: () => {
-    return (
-      <div className="p-2">
-        <h3>Welcome Home!</h3>
-      </div>
-    );
-  },
+  id: 'client',
+  component: () => <ClientLayout />,
 });
+
+export const clientRoute = _clientRoute.addChildren([
+    createRoute({
+        getParentRoute: () => _clientRoute,
+        path: '/',
+        component: () => <div className="p-2"><h3>Hẹ hẹ hẹ</h3></div>,
+    })
+]);
