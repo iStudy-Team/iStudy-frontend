@@ -1,8 +1,9 @@
-import { Outlet } from '@tanstack/react-router';
 import { NavigationMenuDemo } from '@/components/molecules/menu';
 import Footer from '@/components/molecules/footer';
+import { Outlet } from '@tanstack/react-router';
 
-export default function ClientLayout() {
+export default function JumpStartLayout() {
+    console.log('Layout rendered');
     return (
         <div className=" w-full ">
             <header className="sticky w-ful top-0 shadow-lg p-0 z-50 bg-white ">
