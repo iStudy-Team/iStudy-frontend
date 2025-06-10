@@ -11,60 +11,107 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as ClientImport } from './routes/client'
+import { Route as ClientJumpStartCourseImport } from './routes/client/jumpStartCourse'
 import { Route as ClientClientImport } from './routes/client/client'
 
 // Create/Update Routes
 
-const ClientClientRoute = ClientClientImport.update({
-  id: '/client/client',
-  path: '/client/client',
+const ClientRoute = ClientImport.update({
+  id: '/client',
+  path: '/client',
   getParentRoute: () => rootRoute,
+} as any)
+
+const ClientJumpStartCourseRoute = ClientJumpStartCourseImport.update({
+  id: '/jumpStartCourse',
+  path: '/jumpStartCourse',
+  getParentRoute: () => ClientRoute,
+} as any)
+
+const ClientClientRoute = ClientClientImport.update({
+  id: '/client',
+  path: '/client',
+  getParentRoute: () => ClientRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/client': {
+      id: '/client'
+      path: '/client'
+      fullPath: '/client'
+      preLoaderRoute: typeof ClientImport
+      parentRoute: typeof rootRoute
+    }
     '/client/client': {
       id: '/client/client'
-      path: '/client/client'
+      path: '/client'
       fullPath: '/client/client'
       preLoaderRoute: typeof ClientClientImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof ClientImport
+    }
+    '/client/jumpStartCourse': {
+      id: '/client/jumpStartCourse'
+      path: '/jumpStartCourse'
+      fullPath: '/client/jumpStartCourse'
+      preLoaderRoute: typeof ClientJumpStartCourseImport
+      parentRoute: typeof ClientImport
     }
   }
 }
 
 // Create and export the route tree
 
+interface ClientRouteChildren {
+  ClientClientRoute: typeof ClientClientRoute
+  ClientJumpStartCourseRoute: typeof ClientJumpStartCourseRoute
+}
+
+const ClientRouteChildren: ClientRouteChildren = {
+  ClientClientRoute: ClientClientRoute,
+  ClientJumpStartCourseRoute: ClientJumpStartCourseRoute,
+}
+
+const ClientRouteWithChildren =
+  ClientRoute._addFileChildren(ClientRouteChildren)
+
 export interface FileRoutesByFullPath {
+  '/client': typeof ClientRouteWithChildren
   '/client/client': typeof ClientClientRoute
+  '/client/jumpStartCourse': typeof ClientJumpStartCourseRoute
 }
 
 export interface FileRoutesByTo {
+  '/client': typeof ClientRouteWithChildren
   '/client/client': typeof ClientClientRoute
+  '/client/jumpStartCourse': typeof ClientJumpStartCourseRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
+  '/client': typeof ClientRouteWithChildren
   '/client/client': typeof ClientClientRoute
+  '/client/jumpStartCourse': typeof ClientJumpStartCourseRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/client/client'
+  fullPaths: '/client' | '/client/client' | '/client/jumpStartCourse'
   fileRoutesByTo: FileRoutesByTo
-  to: '/client/client'
-  id: '__root__' | '/client/client'
+  to: '/client' | '/client/client' | '/client/jumpStartCourse'
+  id: '__root__' | '/client' | '/client/client' | '/client/jumpStartCourse'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  ClientClientRoute: typeof ClientClientRoute
+  ClientRoute: typeof ClientRouteWithChildren
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  ClientClientRoute: ClientClientRoute,
+  ClientRoute: ClientRouteWithChildren,
 }
 
 export const routeTree = rootRoute
@@ -77,11 +124,23 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/client/client"
+        "/client"
+      ]
+    },
+    "/client": {
+      "filePath": "client.tsx",
+      "children": [
+        "/client/client",
+        "/client/jumpStartCourse"
       ]
     },
     "/client/client": {
-      "filePath": "client/client.tsx"
+      "filePath": "client/client.tsx",
+      "parent": "/client"
+    },
+    "/client/jumpStartCourse": {
+      "filePath": "client/jumpStartCourse.tsx",
+      "parent": "/client"
     }
   }
 }
