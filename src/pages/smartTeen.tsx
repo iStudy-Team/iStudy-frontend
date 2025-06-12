@@ -1,15 +1,15 @@
-import Video from '@/components/molecules/jumpStartCourse/video';
-import JumpStartSection from '@/components/molecules/jumpStartCourse/jumpStartSection';
+import SmartTeenVideo from '@/components/molecules/smartTeen/smartteen.video';
+import SmartTeenSection from '@/components/molecules/smartTeen/smartTeenSection';
 import RegisterForm from '@/components/molecules/registerForm';
 import OutstandingStudentsShowcase from '@/components/outstandingStudentsShowcase';
 
-export default function JumpStartPage() {
+export default function SmartTeenPage() {
     return (
         <div className="min-h-screen ">
             <div className=" w-full h-[560] justify-center pl-[120px] pt-[30px]">
-                <Video />
+                <SmartTeenVideo />
             </div>
-            <JumpStartSection />
+            <SmartTeenSection />
             <OutstandingStudentsShowcase />
             <RegisterForm />
         </div>

@@ -17,7 +17,6 @@ import {
     NavigationMenuList,
     NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
-import { jumpstartRoute } from '@/routes/client/jumpStartCourse';
 
 const components: { title: string; href: string; description: string }[] = [
     {
@@ -26,33 +25,23 @@ const components: { title: string; href: string; description: string }[] = [
         description:
             'Khóa học tiếng Anh cho các bé 3-6 tuổi ILA Jumpstart đem đến môi trường ngôn ngữ chuẩn quốc tế, phương pháp Học qua chơi với 100% giáo viên nước ngoài cho con niềm vui học tập. Chương trình tập trung đặc biệt vào khả năng nghe – nói, giúp con phản xạ nhanh với ngôn ngữ và phát âm chuẩn bản xứ từ nhỏ. ',
     },
-    {
-        title: 'Tiếng Anh Tiểu học (6-11 tuổi)',
-        href: '/docs/primitives/hover-card',
-        description:
-            'Lớp học tiếng Anh cho trẻ tiểu học – ILA Super Juniors (6-11 tuổi) thiết kế bộ giáo trình cụ thể cho 8 cấp độ, tập trung vào 4 kỹ năng ngôn ngữ nghe – nói – đọc – viết, đặc biệt là khả năng nghe – nói.',
-    },
+
     {
         title: 'Tiếng Anh Trung học (11-16 tuổi)',
-        href: '/docs/primitives/progress',
+        href: '/tieng-anh-trung-hoc-11-16-tuoi',
         description:
             'Thấu hiểu giá trị quan trọng của giáo dục như tấm hộ chiếu cho tương lai, khóa học tiếng Anh thiếu niên ILA Smart Teens (11-16 tuổi) được thiết kế đặc biệt cho lứa tuổi thanh thiếu niên với 7 cấp độ học và chương trình giảng dạy tích hợp chuẩn quốc tế tiên tiến nhất.',
     },
     {
         title: 'Tiếng Anh Chuyên ngành (cho người đi làm)',
-        href: '/docs/primitives/scroll-area',
+        href: '/tieng-anh-chuyen-nganh-cho-nguoi-di-lam',
         description:
             'Chương trình tiếng Anh cho người đi làm bao gồm tiếng Anh giao tiếp quốc tế và tiếng Anh dành cho doanh nghiệp. Với các khóa học từ cơ bản đến chuyên sâu phục vụ cho từng nhóm ngành nghề và các bộ kỹ năng chuyên biệt, ILA đem đến các giáo án được thiết kế riêng nhằm tối ưu hóa năng lực tiếng Anh cho bất cứ lĩnh vực nào mà bạn quan tâm (từ marketing, dược, kỹ thuật, tài chính – ngân hàng… đến các ngành nghề mới và các cấp bậc cao hơn).',
     },
-    {
-        title: 'Tiếng Anh STEAM – IMATHS (4-10 tuổi)',
-        href: '/docs/primitives/tabs',
-        description:
-            'Với ILA, toán học thông minh 5.0 chính là công cụ hữu hiệu để kiến thiết tư duy logic và nâng cao chỉ số IQ cho trẻ.',
-    },
+
     {
         title: 'Luyện thi IELTS và SAT',
-        href: '/docs/primitives/tooltip',
+        href: 'chuong-trinh-luyen-thi-ielts-sat',
         description:
             'IELTS và SAT là hai chứng chỉ quan trọng để mở ra cơ hội du học cho học sinh trên toàn thế giới. Chương trình luyện thi IELTS Success và SAT (The Princeton Review) độc quyền tại ILA giúp học viên có lộ trình học rõ ràng và cam kết đầu ra với điểm số cao.',
     },
