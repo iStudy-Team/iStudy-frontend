@@ -1,6 +1,7 @@
 import { Outlet } from '@tanstack/react-router';
 import { NavigationMenuDemo } from '@/components/molecules/menu';
 import Footer from '@/components/molecules/footer';
+import RegisterForm from '@/components/molecules/registerForm';
 
 export default function ClientLayout() {
     return (
@@ -10,6 +11,7 @@ export default function ClientLayout() {
             </header>
             <div className="min-h-screen">
                 <Outlet />
+                <RegisterForm />
             </div>
             <div className="w-full bg-[#f5f5f7]">
                 <Footer />
