@@ -1,17 +1,16 @@
 import Video from '@/components/molecules/jumpStartCourse/video';
 import JumpStartSection from '@/components/molecules/jumpStartCourse/jumpStartSection';
-import RegisterForm from '@/components/molecules/registerForm';
+
 import OutstandingStudentsShowcase from '@/components/outstandingStudentsShowcase';
 
 export default function JumpStartPage() {
     return (
         <div className="min-h-screen ">
-            <div className=" w-full h-[560] justify-center pl-[120px] pt-[30px]">
+            <div className=" w-full h-[560] justify-center">
                 <Video />
             </div>
             <JumpStartSection />
             <OutstandingStudentsShowcase />
-            <RegisterForm />
         </div>
     );
 }
