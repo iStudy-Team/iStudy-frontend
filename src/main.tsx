@@ -4,8 +4,9 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { clientRoute } from '@/routes/client';
 import { rootRoute } from '@/routes/__root.tsx';
+import { authRoute } from './routes/auth';
 
-const routeTree = rootRoute.addChildren([clientRoute]);
+const routeTree = rootRoute.addChildren([clientRoute, authRoute]);
 
 declare module '@tanstack/react-router' {
     interface Register {
