@@ -1,6 +1,7 @@
-import React, { useState, ChangeEvent, FocusEvent } from 'react';
+import { useState, ChangeEvent, FocusEvent } from 'react';
 import { Eye, EyeOff, User, Lock, Mail, Phone } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { useAuthStore } from '@/store/useAuthStore';
 
 // Interfaces
 interface FormData {
@@ -38,6 +39,7 @@ export default function LoginInterface() {
     const [inputType, setInputType] = useState<'text' | 'email' | 'tel'>(
         'text'
     );
+    const { login } = useAuthStore();
 
     const validateEmail = (email: string): boolean => {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -160,11 +162,10 @@ export default function LoginInterface() {
 
         setIsLoading(true);
 
-        // Simulate login process
-        setTimeout(() => {
-            setIsLoading(false);
-            alert('Đăng nhập thành công!');
-        }, 2000);
+        await login({
+            credential: formData.loginId,
+            password: formData.password,
+        });
     };
 
     const togglePasswordVisibility = (): void => {

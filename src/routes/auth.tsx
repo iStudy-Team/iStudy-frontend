@@ -1,7 +1,5 @@
 import { createRoute } from '@tanstack/react-router';
 import { rootRoute } from '@/routes/__root.tsx';
-import JumpStartPage from '@/pages/jumpStart';
-import SmartTeenPage from '@/pages/smartTeen';
 import AuthLayout from '@/layout/auth';
 import LoginInterface from '@/pages/auth/login';
 import RegisterLayout from '@/pages/auth/register';
