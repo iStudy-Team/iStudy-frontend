@@ -12,6 +12,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as ClientImport } from './routes/client'
+import { Route as AuthImport } from './routes/auth'
 
 // Create/Update Routes
 
@@ -21,10 +22,23 @@ const ClientRoute = ClientImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const AuthRoute = AuthImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthImport
+      parentRoute: typeof rootRoute
+    }
     '/client': {
       id: '/client'
       path: '/client'
@@ -38,32 +52,37 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
+  '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
 }
 
 export interface FileRoutesByTo {
+  '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
+  '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/client'
+  fullPaths: '/auth' | '/client'
   fileRoutesByTo: FileRoutesByTo
-  to: '/client'
-  id: '__root__' | '/client'
+  to: '/auth' | '/client'
+  id: '__root__' | '/auth' | '/client'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
+  AuthRoute: typeof AuthRoute
   ClientRoute: typeof ClientRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  AuthRoute: AuthRoute,
   ClientRoute: ClientRoute,
 }
 
@@ -77,8 +96,12 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
+        "/auth",
         "/client"
       ]
+    },
+    "/auth": {
+      "filePath": "auth.tsx"
     },
     "/client": {
       "filePath": "client.tsx"
