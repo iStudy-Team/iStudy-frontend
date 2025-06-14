@@ -7,7 +7,6 @@ export default function IeltsCourseCoursePage() {
         <div className="min-h-screen ">
             <IeltsCourseSection />
             <OutstandingStudentsShowcase />
-            <RegisterForm />
         </div>
     );
 }

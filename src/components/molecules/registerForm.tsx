@@ -1,3 +1,5 @@
+'use client';
+
 import type React from 'react';
 
 import { useState } from 'react';
@@ -20,7 +22,7 @@ import {
     Building,
 } from 'lucide-react';
 
-export default function RegisterForm() {
+export default function ResponsiveRegisterFormMinimal() {
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
@@ -57,7 +59,7 @@ export default function RegisterForm() {
         { value: 'center5', label: 'ILA Quận 7' },
     ];
 
-    const handleInputChange = (field: string, value: string) => {
+    const handleInputChange = (field: string, value: string | boolean) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -84,12 +86,21 @@ export default function RegisterForm() {
                 <div className="absolute inset-0 bg-black/20" />
             </div>
 
-            {/* Form Container */}
-            <div className="relative z-10 flex items-center justify-center w-[520px] h-[883px] p-58px md:p-10 bg-[#FFFFFF99] ml-4 ">
-                <div className="w-full max-w-md  md:ml-8 lg:ml-16 mr-10">
+            {/* Form Container - Responsive */}
+            <div
+                className="relative z-10 flex items-center justify-center
+                        w-full h-auto min-h-screen p-4
+                        md:justify-start md:w-[520px] md:h-[883px] md:p-[58px] md:ml-4
+                        lg:w-[520px] lg:h-[883px] lg:p-[58px] lg:ml-4
+                        bg-[#FFFFFF99]"
+            >
+                <div
+                    className="w-full max-w-md
+                            md:ml-8 lg:ml-16 mr-0 md:mr-10"
+                >
                     {/* Form Header */}
-                    <div className="text-center mb-8 ">
-                        <h3 className="font-serif text-2xl">
+                    <div className="text-center mb-6 md:mb-8">
+                        <h3 className="font-serif text-xl sm:text-2xl">
                             ĐĂNG KÝ LỚP HỌC THỬ
                             <br />
                             MIỄN PHÍ NGAY BÂY GIỜ!
@@ -97,7 +108,10 @@ export default function RegisterForm() {
                     </div>
 
                     {/* Registration Form */}
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-3 md:space-y-4"
+                    >
                         {/* Name Field */}
                         <div className="relative">
                             <Input
@@ -107,10 +121,10 @@ export default function RegisterForm() {
                                 onChange={(e) =>
                                     handleInputChange('name', e.target.value)
                                 }
-                                className="w-full h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg placeholder:text-gray-500 text-gray-800 focus:ring-2 focus:ring-blue-500"
+                                className="w-full h-10 md:h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg placeholder:text-gray-500 text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                                 required
                             />
-                            <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <User className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
                         </div>
 
                         {/* Phone Field */}
@@ -122,10 +136,10 @@ export default function RegisterForm() {
                                 onChange={(e) =>
                                     handleInputChange('phone', e.target.value)
                                 }
-                                className="w-full h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg placeholder:text-gray-500 text-gray-800 focus:ring-2 focus:ring-blue-500"
+                                className="w-full h-10 md:h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg placeholder:text-gray-500 text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                                 required
                             />
-                            <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <Phone className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
                         </div>
 
                         {/* Email Field */}
@@ -137,9 +151,9 @@ export default function RegisterForm() {
                                 onChange={(e) =>
                                     handleInputChange('email', e.target.value)
                                 }
-                                className="w-full h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg placeholder:text-gray-500 text-gray-800 focus:ring-2 focus:ring-blue-500"
+                                className="w-full h-10 md:h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg placeholder:text-gray-500 text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                             />
-                            <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <Mail className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
                         </div>
 
                         {/* Course Selection */}
@@ -150,7 +164,7 @@ export default function RegisterForm() {
                                     handleInputChange('course', value)
                                 }
                             >
-                                <SelectTrigger className="w-full h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 focus:ring-2 focus:ring-blue-500">
+                                <SelectTrigger className="w-full h-10 md:h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm md:text-base">
                                     <SelectValue placeholder="Khóa học (*)" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -164,7 +178,7 @@ export default function RegisterForm() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <GraduationCap className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                            <GraduationCap className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 pointer-events-none" />
                         </div>
 
                         {/* City Selection */}
@@ -175,7 +189,7 @@ export default function RegisterForm() {
                                     handleInputChange('city', value)
                                 }
                             >
-                                <SelectTrigger className="w-full h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 focus:ring-2 focus:ring-blue-500">
+                                <SelectTrigger className="w-full h-10 md:h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm md:text-base">
                                     <SelectValue placeholder="Thành phố (*)" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -189,7 +203,7 @@ export default function RegisterForm() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Building className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                            <Building className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 pointer-events-none" />
                         </div>
 
                         {/* Center Selection */}
@@ -200,7 +214,7 @@ export default function RegisterForm() {
                                     handleInputChange('center', value)
                                 }
                             >
-                                <SelectTrigger className="w-full h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 focus:ring-2 focus:ring-blue-500">
+                                <SelectTrigger className="w-full h-10 md:h-12 px-4 pr-12 rounded-full border-0 bg-white/95 backdrop-blur-sm shadow-lg text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm md:text-base">
                                     <SelectValue placeholder="Tìm trung tâm gần nhất" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -214,28 +228,28 @@ export default function RegisterForm() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                            <MapPin className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 pointer-events-none" />
                         </div>
 
                         {/* Terms and Conditions */}
-                        <div className="flex items-start space-x-3 py-4">
+                        <div className="flex items-start space-x-2 md:space-x-3 py-3 md:py-4">
                             <Checkbox
                                 id="terms"
                                 checked={formData.agreeToTerms}
                                 onCheckedChange={(checked) =>
                                     handleInputChange(
                                         'agreeToTerms',
-                                        checked as string
+                                        checked as boolean
                                     )
                                 }
-                                className="mt-1 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-2"
+                                className="mt-1 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-2 w-4 h-4 md:w-5 md:h-5 "
                             />
                             <label
                                 htmlFor="terms"
-                                className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+                                className="text-xs md:text-sm text-gray-700 leading-relaxed cursor-pointer "
                             >
                                 Bằng việc đăng ký thông tin, bạn đồng ý cho phép
-                                iStydy liên lạc thông qua các hình thức: cuộc
+                                iStudy liên lạc thông qua các hình thức: cuộc
                                 gọi, tin nhắn, email nhằm mục đích tư vấn các
                                 chương trình Anh ngữ & nghiên cứu thị trường.
                                 Xem chi tiết điều khoản bảo vệ dữ liệu cá nhân
@@ -251,16 +265,25 @@ export default function RegisterForm() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="space-y-3 pt-4 w-[204px] ml-[80px]  ">
+                        <div
+                            className="pt-3 md:pt-4
+                    w-full flex justify-center
+                    md:w-[204px] md:ml-[80px] md:block"
+                        >
                             <Button
                                 type="submit"
-                                className="relative inline-flex items-center justify-center w-full px-4 py-2 h-10 overflow-hidden font-medium transition-all bg-purple-600 rounded-full hover:bg-white group cursor-pointer"
+                                disabled={!formData.agreeToTerms}
+                                className="relative inline-flex items-center justify-center
+                        w-full md:w-full px-4 py-2 h-9 md:h-10 overflow-hidden font-medium transition-all
+                        bg-blue-600 rounded-full hover:bg-white group cursor-pointer
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        text-sm md:text-sm"
                             >
                                 {/* Hiệu ứng sóng - điều chỉnh để phủ toàn bộ nút khi hover */}
-                                <span className="w-[200%] h-[435%] rounded rotate-[-40deg] bg-red-600 absolute bottom-0 left-0 -translate-x-full ease-out duration-500 transition-all translate-y-full group-hover:translate-x-0 group-hover:translate-y-0"></span>
+                                <span className="w-[200%] h-[400%] md:h-[435%] rounded rotate-[-40deg] bg-red-600 absolute bottom-0 left-0 -translate-x-full ease-out duration-500 transition-all translate-y-full group-hover:translate-x-0 group-hover:translate-y-0"></span>
 
                                 {/* Nội dung nút */}
-                                <span className="relative w-full text-center text-white transition-colors duration-300 ease-in-out group-hover:text-black text-sm z-10">
+                                <span className="relative w-full text-center text-white transition-colors duration-300 ease-in-out group-hover:text-black z-10">
                                     ĐĂNG KÝ
                                 </span>
                             </Button>
@@ -268,8 +291,8 @@ export default function RegisterForm() {
                     </form>
 
                     {/* Additional Info */}
-                    <div className="text-center mt-6">
-                        <p className="text-sm text-gray-600">
+                    <div className="text-center mt-4 md:mt-6">
+                        <p className="text-xs md:text-sm text-gray-600">
                             Có câu hỏi? Gọi ngay{' '}
                             <a
                                 href="tel:1900636929"
@@ -282,10 +305,10 @@ export default function RegisterForm() {
                 </div>
             </div>
 
-            {/* Floating Elements */}
-            <div className="absolute top-10 right-10 w-16 h-16 bg-yellow-400/20 rounded-full animate-bounce hidden lg:block" />
-            <div className="absolute bottom-20 right-20 w-8 h-8 bg-blue-400/20 rounded-full animate-pulse hidden lg:block" />
-            <div className="absolute top-1/3 right-1/4 w-4 h-4 bg-green-400/20 rounded-full animate-ping hidden lg:block" />
+            {/* Floating Elements - Only visible on large screens */}
+            <div className="absolute top-10 right-10 w-12 h-12 md:w-16 md:h-16 bg-yellow-400/20 rounded-full animate-bounce hidden lg:block" />
+            <div className="absolute bottom-20 right-20 w-6 h-6 md:w-8 md:h-8 bg-blue-400/20 rounded-full animate-pulse hidden lg:block" />
+            <div className="absolute top-1/3 right-1/4 w-3 h-3 md:w-4 md:h-4 bg-green-400/20 rounded-full animate-ping hidden lg:block" />
         </div>
     );
 }

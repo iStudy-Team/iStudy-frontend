@@ -80,7 +80,7 @@ export function NavigationMenuDemo() {
                         </NavigationMenuItem>
                         <NavigationMenuItem>
                             <Link
-                                to="/"
+                                to="/gioi-thieu-ila-viet-nam"
                                 className="font-medium decoration-inherit hover:text-purple-600 transition-colors"
                             >
                                 Giới Thiệu
@@ -191,7 +191,16 @@ export function NavigationMenuDemo() {
             <div className="md:hidden">
                 {/* Mobile Header */}
                 <div className="flex items-center justify-between p-4">
-                    <div className="font-bold text-xl">Logo</div>
+                    <div className="font-bold text-xl">
+                        <img
+                            src="/logo.png"
+                            alt="Logo"
+                            width={100}
+                            height={100}
+                            className="inline-block mr-2"
+                            loading="lazy"
+                        />
+                    </div>
                     <button
                         onClick={toggleMobileMenu}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -409,10 +418,10 @@ export function NavigationMenuDemo() {
                             </div>
 
                             {/* Mobile CTA Button */}
-                            <div className="pt-4 mt-6 border-t">
+                            <div className="pt-4 mt-6 border-t justify-center">
                                 <Link
                                     to="/"
-                                    className="relative inline-flex items-center justify-center w-full px-6 py-3 h-12 overflow-hidden font-medium transition-all bg-purple-600 rounded-full hover:bg-white group"
+                                    className="relative inline-flex items-center justify-center justify-self-center w-1/2  px-6 py-3 h-12 overflow-hidden font-medium transition-all bg-purple-600 rounded-full hover:bg-white group"
                                     onClick={toggleMobileMenu}
                                 >
                                     <span className="w-48 h-48 rounded rotate-[-40deg] bg-red-600 absolute bottom-0 left-0 -translate-x-full ease-out duration-500 transition-all translate-y-full mb-9 ml-9 group-hover:ml-0 group-hover:mb-32 group-hover:translate-x-0"></span>
