@@ -8,6 +8,7 @@ export default defineConfig({
     tailwindcss(),
     TanStackRouterVite({ target: "react", autoCodeSplitting: true }),
   ],
+  envDir: './env',
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

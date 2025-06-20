@@ -1,189 +1,109 @@
-import { useState, ChangeEvent, FocusEvent } from 'react';
-import { Eye, EyeOff, User, Lock, Mail, Phone } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
-import { useAuthStore } from '@/store/useAuthStore';
-
-// Interfaces
-interface FormData {
-    loginId: string; // Combined field for username/email/phone
-    password: string;
-}
-
-interface Errors {
-    loginId: string;
-    password: string;
-}
-
-interface Touched {
-    loginId: boolean;
-    password: boolean;
-}
-
-type FieldName = keyof FormData;
+import React, { useState } from 'react';
+import { Eye, EyeOff, User, Lock, Mail } from 'lucide-react';
 
 export default function LoginInterface() {
-    const [formData, setFormData] = useState<FormData>({
-        loginId: '',
+    const [formData, setFormData] = useState({
+        email: '',
         password: '',
     });
-    const [showPassword, setShowPassword] = useState<boolean>(false);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [errors, setErrors] = useState<Errors>({
-        loginId: '',
+    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errors, setErrors] = useState({
+        email: '',
         password: '',
     });
-    const [touched, setTouched] = useState<Touched>({
-        loginId: false,
+    const [touched, setTouched] = useState({
+        email: false,
         password: false,
     });
-    const [inputType, setInputType] = useState<'text' | 'email' | 'tel'>(
-        'text'
-    );
-    const { login } = useAuthStore();
 
-    const validateEmail = (email: string): boolean => {
+    const validateEmail = (email: string) => {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return regex.test(email);
     };
 
-    const validatePhone = (phone: string): boolean => {
-        const regex = /^[0-9]{10,11}$/;
-        return regex.test(phone);
-    };
-
-    const validateUsername = (username: string): boolean => {
-        return username.length >= 3 && username.length <= 20;
-    };
-
-    const validatePassword = (password: string): boolean => {
+    const validatePassword = (password: string | any[]) => {
         return password.length >= 6;
     };
 
-    const detectInputType = (value: string): 'text' | 'email' | 'tel' => {
-        if (value.includes('@')) return 'email';
-        if (/^\d+$/.test(value)) return 'tel';
-        return 'text';
-    };
+    const validateField = (name: string, value: string) => {
+        let error = '';
 
-    const validateLoginId = (value: string): string => {
-        if (!value.trim()) {
-            return 'Vui lòng nhập username, email hoặc số điện thoại';
-        }
-
-        const type = detectInputType(value);
-
-        if (type === 'email' && !validateEmail(value)) {
-            return 'Email không đúng định dạng';
-        }
-
-        if (type === 'tel' && !validatePhone(value)) {
-            return 'Số điện thoại phải có 10-11 chữ số';
-        }
-
-        if (type === 'text' && !validateUsername(value)) {
-            return 'Username phải từ 3 đến 20 ký tự';
-        }
-
-        return '';
-    };
-
-    const validateField = (name: FieldName, value: string): string => {
-        if (name === 'loginId') {
-            return validateLoginId(value);
+        if (name === 'email') {
+            if (!value.trim()) {
+                error = 'Email không được để trống';
+            } else if (!validateEmail(value)) {
+                error = 'Email không đúng định dạng';
+            }
         } else if (name === 'password') {
             if (!value.trim()) {
-                return 'Mật khẩu không được để trống';
+                error = 'Mật khẩu không được để trống';
             } else if (!validatePassword(value)) {
-                return 'Mật khẩu phải có ít nhất 6 ký tự';
+                error = 'Mật khẩu phải có ít nhất 6 ký tự';
             }
         }
-        return '';
+
+        return error;
     };
 
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    const handleInputChange = (e: { target: { name: string; value: any } }) => {
         const { name, value } = e.target;
-        const fieldName = name as FieldName;
-
         setFormData((prev) => ({
             ...prev,
-            [fieldName]: value,
+            [name]: value,
         }));
 
-        // Detect input type for loginId field
-        if (fieldName === 'loginId') {
-            setInputType(detectInputType(value));
-        }
-
         // Clear error when user starts typing
-        if (touched[fieldName]) {
-            const error = validateField(fieldName, value);
+        if (touched[name]) {
+            const error = validateField(name, value);
             setErrors((prev) => ({
                 ...prev,
-                [fieldName]: error,
+                [name]: error,
             }));
         }
     };
 
-    const handleInputBlur = (e: FocusEvent<HTMLInputElement>): void => {
+    const handleInputBlur = (e: { target: { name: any; value: any } }) => {
         const { name, value } = e.target;
-        const fieldName = name as FieldName;
-
         setTouched((prev) => ({
             ...prev,
-            [fieldName]: true,
+            [name]: true,
         }));
 
-        const error = validateField(fieldName, value);
+        const error = validateField(name, value);
         setErrors((prev) => ({
             ...prev,
-            [fieldName]: error,
+            [name]: error,
         }));
     };
 
-    const handleSubmit = async (): Promise<void> => {
+    const handleSubmit = async () => {
         // Validate all fields
-        const loginIdError = validateField('loginId', formData.loginId);
+        const emailError = validateField('email', formData.email);
         const passwordError = validateField('password', formData.password);
 
         setErrors({
-            loginId: loginIdError,
+            email: emailError,
             password: passwordError,
         });
 
         setTouched({
-            loginId: true,
+            email: true,
             password: true,
         });
 
         // If there are errors, don't submit
-        if (loginIdError || passwordError) {
+        if (emailError || passwordError) {
             return;
         }
 
         setIsLoading(true);
 
-        await login({
-            credential: formData.loginId,
-            password: formData.password,
-        });
-    };
-
-    const togglePasswordVisibility = (): void => {
-        setShowPassword(!showPassword);
-    };
-
-    const getLoginIcon = () => {
-        if (inputType === 'email')
-            return <Mail className="h-5 w-5 text-gray-400" />;
-        if (inputType === 'tel')
-            return <Phone className="h-5 w-5 text-gray-400" />;
-        return <User className="h-5 w-5 text-gray-400" />;
-    };
-
-    const getLoginPlaceholder = () => {
-        if (inputType === 'email') return 'your@email.com';
-        if (inputType === 'tel') return '0987654321';
-        return 'Tên người dùng';
+        // Simulate login process
+        setTimeout(() => {
+            setIsLoading(false);
+            alert('Đăng nhập thành công!');
+        }, 2000);
     };
 
     return (
@@ -199,12 +119,12 @@ export default function LoginInterface() {
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 transform hover:scale-105 transition-all duration-300">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-35 h-16  rounded-2xl  ">
-                            <img src="/logo.png" alt="" />
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
+                            <User className="w-8 h-8 text-white" />
                         </div>
-                        <p className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent -mt-8">
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                             Chào mừng trở lại
-                        </p>
+                        </h1>
                         <p className="text-gray-500 mt-2">
                             Đăng nhập để tiếp tục
                         </p>
@@ -212,12 +132,12 @@ export default function LoginInterface() {
 
                     {/* Login form */}
                     <div className="space-y-6">
-                        {/* Combined login field */}
+                        {/* Email field */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">
-                                Username / Email / Số điện thoại
+                                Email
                             </label>
-                            {errors.loginId && touched.loginId && (
+                            {errors.email && touched.email && (
                                 <p className="text-red-500 text-sm flex items-center bg-red-50 p-2 rounded-lg border border-red-200">
                                     <svg
                                         className="w-4 h-4 mr-2 flex-shrink-0"
@@ -230,25 +150,25 @@ export default function LoginInterface() {
                                             clipRule="evenodd"
                                         />
                                     </svg>
-                                    {errors.loginId}
+                                    {errors.email}
                                 </p>
                             )}
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    {getLoginIcon()}
+                                    <Mail className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
-                                    type={inputType}
-                                    name="loginId"
-                                    value={formData.loginId}
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
                                     onChange={handleInputChange}
                                     onBlur={handleInputBlur}
                                     className={`block w-full pl-10 pr-3 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50/50 hover:bg-gray-50 ${
-                                        errors.loginId && touched.loginId
+                                        errors.email && touched.email
                                             ? 'border-red-300 focus:ring-red-500'
                                             : 'border-gray-200 focus:ring-blue-500'
                                     }`}
-                                    placeholder={getLoginPlaceholder()}
+                                    placeholder="your@email.com"
                                 />
                             </div>
                         </div>
@@ -293,7 +213,9 @@ export default function LoginInterface() {
                                 />
                                 <button
                                     type="button"
-                                    onClick={togglePasswordVisibility}
+                                    onClick={() =>
+                                        setShowPassword(!showPassword)
+                                    }
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                                 >
                                     {showPassword ? (
@@ -316,13 +238,12 @@ export default function LoginInterface() {
                                     Nhớ đăng nhập
                                 </span>
                             </label>
-                            <Link
-                                to="/forgot-password"
+                            <button
                                 type="button"
                                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                             >
                                 Quên mật khẩu?
-                            </Link>
+                            </button>
                         </div>
 
                         {/* Submit button */}
@@ -395,12 +316,9 @@ export default function LoginInterface() {
                     {/* Sign up link */}
                     <p className="text-center text-sm text-gray-600 mt-8">
                         Chưa có tài khoản?{' '}
-                        <Link
-                            to="/register"
-                            className="text-blue-600 hover:text-blue-700 font-medium"
-                        >
+                        <button className="text-blue-600 hover:text-blue-700 font-medium">
                             Đăng ký ngay
-                        </Link>
+                        </button>
                     </p>
                 </div>
             </div>

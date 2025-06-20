@@ -80,7 +80,7 @@ export function NavigationMenuDemo() {
                         </NavigationMenuItem>
                         <NavigationMenuItem>
                             <Link
-                                to="/gioi-thieu-ila-viet-nam"
+                                to="/about"
                                 className="font-medium decoration-inherit hover:text-purple-600 transition-colors"
                             >
                                 Giới Thiệu
@@ -108,7 +108,7 @@ export function NavigationMenuDemo() {
 
                         <NavigationMenuItem>
                             <Link
-                                to="/"
+                                to="/co-so-vat-chat"
                                 className="font-medium decoration-inherit hover:text-purple-600 transition-colors mr-4"
                             >
                                 Cơ Sở Vật Chất
@@ -117,7 +117,7 @@ export function NavigationMenuDemo() {
 
                         <NavigationMenuItem>
                             <Link
-                                to="/"
+                                to="/giao-vien"
                                 className="font-medium decoration-inherit hover:text-purple-600 transition-colors"
                             >
                                 Giáo Viên
