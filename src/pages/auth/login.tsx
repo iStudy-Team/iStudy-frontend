@@ -1,5 +1,14 @@
-import { useState, ChangeEvent, FocusEvent } from 'react';
-import { Eye, EyeOff, User, Lock, Mail, Phone } from 'lucide-react';
+import { useState, ChangeEvent, FocusEvent, useEffect } from 'react';
+import {
+    Eye,
+    EyeOff,
+    User,
+    Lock,
+    Mail,
+    Phone,
+    LogOut,
+    LayoutDashboard,
+} from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -39,7 +48,14 @@ export default function LoginInterface() {
     const [inputType, setInputType] = useState<'text' | 'email' | 'tel'>(
         'text'
     );
-    const { login } = useAuthStore();
+    const { login, logout, isAuthenticated } = useAuthStore();
+
+    // Stop loading when authentication state changes
+    useEffect(() => {
+        if (isAuthenticated) {
+            setIsLoading(false);
+        }
+    }, [isAuthenticated]);
 
     const validateEmail = (email: string): boolean => {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -162,10 +178,25 @@ export default function LoginInterface() {
 
         setIsLoading(true);
 
-        await login({
-            credential: formData.loginId,
-            password: formData.password,
-        });
+        try {
+            await login({
+                credential: formData.loginId,
+                password: formData.password,
+            });
+        } catch (error) {
+            // Handle login error
+            console.error('Login failed:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleLogout = (): void => {
+        logout();
+        // Reset form
+        setFormData({ loginId: '', password: '' });
+        setErrors({ loginId: '', password: '' });
+        setTouched({ loginId: false, password: false });
     };
 
     const togglePasswordVisibility = (): void => {
@@ -186,6 +217,72 @@ export default function LoginInterface() {
         return 'Tên người dùng';
     };
 
+    // Render authenticated state
+    if (isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+                {/* Background decoration */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20 blur-3xl"></div>
+                    <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400 to-pink-500 rounded-full opacity-20 blur-3xl"></div>
+                </div>
+
+                <div className="relative w-full max-w-md">
+                    {/* Authenticated card */}
+                    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 transform transition-all duration-300">
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-35 h-16 rounded-2xl">
+                                <img src="/logo.png" alt="" />
+                            </div>
+                            <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 -mt-8">
+                                <svg
+                                    className="w-8 h-8 text-green-500"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                            </div>
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+                                Bạn đã đăng nhập
+                            </h2>
+                            <p className="text-gray-500 mt-2">
+                                Chào mừng bạn quay trở lại!
+                            </p>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="space-y-4">
+                            <Link
+                                to="/dashboard"
+                                className="w-full flex items-center justify-center py-3 px-4 rounded-xl font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl transition-all duration-200"
+                            >
+                                <LayoutDashboard className="w-5 h-5 mr-2" />
+                                Đi đến Dashboard
+                            </Link>
+
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center py-3 px-4 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transform hover:scale-105 active:scale-95 transition-all duration-200"
+                            >
+                                <LogOut className="w-5 h-5 mr-2" />
+                                Đăng xuất
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Render login form
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
             {/* Background decoration */}
@@ -196,7 +293,7 @@ export default function LoginInterface() {
 
             <div className="relative w-full max-w-md">
                 {/* Main login card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 transform hover:scale-105 transition-all duration-300">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 transform transition-all duration-300">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-35 h-16  rounded-2xl  ">
@@ -307,15 +404,6 @@ export default function LoginInterface() {
 
                         {/* Remember me & Forgot password */}
                         <div className="flex items-center justify-between">
-                            <label className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="ml-2 text-sm text-gray-600">
-                                    Nhớ đăng nhập
-                                </span>
-                            </label>
                             <Link
                                 to="/forgot-password"
                                 type="button"

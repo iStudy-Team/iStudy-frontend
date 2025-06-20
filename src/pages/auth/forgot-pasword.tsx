@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, FocusEvent } from 'react';
-import { Mail, Lock, ArrowLeft, Key, EyeOff, Eye } from 'lucide-react';
+import { Mail, ArrowLeft, Key, EyeOff, Eye } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
@@ -8,6 +8,8 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useNavigate } from '@tanstack/react-router';
 
 interface FormData {
     email: string;
@@ -31,15 +33,16 @@ interface Touched {
 }
 
 export default function ForgotPassword() {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState<FormData>({
         email: '',
         otp: '',
         newPassword: '',
         confirmPassword: '',
     });
-
+    const { forgotPassword, resetPassword } = useAuthStore();
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Email, 2: OTP, 3: New Password
+    const [step, setStep] = useState<1 | 2>(1); // 1: Email, 2: OTP + New Password
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [showConfirmPassword, setShowConfirmPassword] =
         useState<boolean>(false);
@@ -82,6 +85,7 @@ export default function ForgotPassword() {
             return 'Mật khẩu không khớp';
         return '';
     };
+
     const handleOTPChange = (newValue: string) => {
         setFormData((prev) => ({
             ...prev,
@@ -160,79 +164,17 @@ export default function ForgotPassword() {
 
         setIsLoading(true);
 
-        // Simulate sending OTP
-        setTimeout(() => {
+        try {
+            await forgotPassword({ email: formData.email });
             setIsLoading(false);
+
             setStep(2);
-
-            toast.success('Mã OTP đã được gửi đến email của bạn!');
-        }, 1500);
-    };
-
-    const handleVerifyOTP = async (e: React.FormEvent): Promise<void> => {
-        e.preventDefault();
-
-        const otpError = validateOTP(formData.otp);
-        setErrors({
-            email: '',
-            otp: otpError,
-            newPassword: '',
-            confirmPassword: '',
-        });
-        setTouched({
-            email: false,
-            otp: true,
-            newPassword: false,
-            confirmPassword: false,
-        });
-
-        if (otpError) return;
-
-        setIsLoading(true);
-
-        // Simulate OTP verification
-        setTimeout(() => {
-            setIsLoading(false);
-            setStep(3);
-        }, 1500);
-    };
-
-    const handleResetPassword = async (e: React.FormEvent): Promise<void> => {
-        e.preventDefault();
-
-        const passwordError = validatePassword(formData.newPassword);
-        const confirmPasswordError = validateConfirmPassword(
-            formData.confirmPassword
-        );
-
-        setErrors({
-            email: '',
-            otp: '',
-            newPassword: passwordError,
-            confirmPassword: confirmPasswordError,
-        });
-        setTouched({
-            email: false,
-            otp: false,
-            newPassword: true,
-            confirmPassword: true,
-        });
-
-        if (passwordError || confirmPasswordError) return;
-
-        setIsLoading(true);
-
-        // Simulate password reset
-        setTimeout(() => {
-            setIsLoading(false);
-
-            toast.success('Mật khẩu đã được đặt lại thành công!');
-        }, 1500);
-    };
-
-    const handleBack = (): void => {
-        if (step === 2) {
-            setStep(1);
+            setFormData((prev) => ({
+                ...prev,
+                otp: '',
+                newPassword: '',
+                confirmPassword: '',
+            }));
             setErrors({
                 email: '',
                 otp: '',
@@ -245,8 +187,79 @@ export default function ForgotPassword() {
                 newPassword: false,
                 confirmPassword: false,
             });
-        } else if (step === 3) {
-            setStep(2);
+        } catch (error) {
+            setIsLoading(false);
+            toast.error((error as Error).message || 'Gửi mã OTP thất bại');
+            return;
+        }
+    };
+
+    const handleResetPassword = async (e: React.FormEvent): Promise<void> => {
+        e.preventDefault();
+
+        const otpError = validateOTP(formData.otp);
+        const passwordError = validatePassword(formData.newPassword);
+        const confirmPasswordError = validateConfirmPassword(
+            formData.confirmPassword
+        );
+
+        setErrors({
+            email: '',
+            otp: otpError,
+            newPassword: passwordError,
+            confirmPassword: confirmPasswordError,
+        });
+        setTouched({
+            email: false,
+            otp: true,
+            newPassword: true,
+            confirmPassword: true,
+        });
+
+        if (otpError || passwordError || confirmPasswordError) return;
+
+        setIsLoading(true);
+
+        try {
+            await resetPassword({
+                email: formData.email,
+                otp: formData.otp,
+                password: formData.newPassword,
+            });
+            setIsLoading(false);
+
+            setStep(1);
+            setFormData({
+                email: '',
+                otp: '',
+                newPassword: '',
+                confirmPassword: '',
+            });
+            setErrors({
+                email: '',
+                otp: '',
+                newPassword: '',
+                confirmPassword: '',
+            });
+            setTouched({
+                email: false,
+                otp: false,
+                newPassword: false,
+                confirmPassword: false,
+            });
+            navigate({ to: '/login' });
+        } catch (error) {
+            setIsLoading(false);
+            toast.error(
+                (error as Error).message || 'Đặt lại mật khẩu thất bại'
+            );
+            return;
+        }
+    };
+
+    const handleBack = (): void => {
+        if (step === 2) {
+            setStep(1);
             setErrors({
                 email: '',
                 otp: '',
@@ -287,18 +300,12 @@ export default function ForgotPassword() {
                             <img src="/logo.png" alt="" />
                         </div>
                         <p className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent -mt-8">
-                            {step === 1
-                                ? 'Quên mật khẩu'
-                                : step === 2
-                                  ? 'Xác nhận OTP'
-                                  : 'Đặt lại mật khẩu'}
+                            {step === 1 ? 'Quên mật khẩu' : 'Đặt lại mật khẩu'}
                         </p>
                         <p className="text-gray-500 mt-2">
                             {step === 1
                                 ? 'Nhập email để nhận mã xác nhận'
-                                : step === 2
-                                  ? 'Nhập mã OTP đã gửi đến email của bạn'
-                                  : 'Nhập mật khẩu mới của bạn'}
+                                : 'Nhập mã OTP và mật khẩu mới'}
                         </p>
                     </div>
 
@@ -367,8 +374,11 @@ export default function ForgotPassword() {
                                 )}
                             </button>
                         </form>
-                    ) : step === 2 ? (
-                        <form onSubmit={handleVerifyOTP} className="space-y-4">
+                    ) : (
+                        <form
+                            onSubmit={handleResetPassword}
+                            className="space-y-4"
+                        >
                             {/* Back button */}
                             <button
                                 type="button"
@@ -424,41 +434,6 @@ export default function ForgotPassword() {
                                     Mã OTP đã được gửi đến {formData.email}
                                 </p>
                             </div>
-
-                            {/* Submit button */}
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className={`w-full py-3 px-4 rounded-xl font-medium text-white transition-all duration-200 mt-6 ${
-                                    isLoading
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
-                                }`}
-                            >
-                                {isLoading ? (
-                                    <div className="flex items-center justify-center">
-                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                        Đang xác nhận...
-                                    </div>
-                                ) : (
-                                    'Xác nhận OTP'
-                                )}
-                            </button>
-                        </form>
-                    ) : (
-                        <form
-                            onSubmit={handleResetPassword}
-                            className="space-y-4"
-                        >
-                            {/* Back button */}
-                            <button
-                                type="button"
-                                onClick={handleBack}
-                                className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium mb-4"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-1" />
-                                Quay lại nhập OTP
-                            </button>
 
                             {/* New Password field */}
                             <div className="space-y-2">

@@ -174,7 +174,7 @@ export function NavigationMenuDemo() {
                         </NavigationMenuItem>
                     </NavigationMenuList>
                     <Link
-                        to="/"
+                        to="/login"
                         className="relative inline-flex items-center justify-start px-6 py-3 h-11 overflow-hidden font-medium transition-all bg-purple-600 rounded-full hover:bg-white group w-fit ml-4"
                     >
                         <span className="w-48 h-48 rounded rotate-[-40deg] bg-red-600 absolute bottom-0 left-0 -translate-x-full ease-out duration-500 transition-all translate-y-full mb-9 ml-9 group-hover:ml-0 group-hover:mb-32 group-hover:translate-x-0"></span>
@@ -420,7 +420,7 @@ export function NavigationMenuDemo() {
                             {/* Mobile CTA Button */}
                             <div className="pt-4 mt-6 border-t justify-center">
                                 <Link
-                                    to="/"
+                                    to="/login"
                                     className="relative inline-flex items-center justify-center justify-self-center w-1/2  px-6 py-3 h-12 overflow-hidden font-medium transition-all bg-purple-600 rounded-full hover:bg-white group"
                                     onClick={toggleMobileMenu}
                                 >

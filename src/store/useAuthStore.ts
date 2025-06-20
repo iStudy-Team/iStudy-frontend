@@ -37,6 +37,10 @@ export const useAuthStore = create<AuthState>((set) => ({
                     LOCALSTORAGE_KEY.ACCESS_TOKEN,
                     JSON.stringify(response.token)
                 );
+                localStorage.setItem(
+                    LOCALSTORAGE_KEY.USER,
+                    JSON.stringify(response.user)
+                );
                 set({ user: response.user, isAuthenticated: true });
                 toast.success('Login successful');
             } else {
@@ -101,6 +105,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     logout: () => {
         localStorage.removeItem(LOCALSTORAGE_KEY.ACCESS_TOKEN);
+        localStorage.removeItem(LOCALSTORAGE_KEY.USER);
         set({ user: null, isAuthenticated: false });
     },
 }));

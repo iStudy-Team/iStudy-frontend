@@ -1,15 +1,15 @@
 import React, { useState, ChangeEvent, FocusEvent } from 'react';
-import { Eye, EyeOff, User, Lock, Mail, Phone, UserPlus } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
+import { Eye, EyeOff, User, Lock, Mail, Phone } from 'lucide-react';
+import { Link, useNavigate } from '@tanstack/react-router';
 import {
     Select,
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useAuthStore } from '@/store/useAuthStore';
 
 // Interfaces
 interface FormData {
@@ -17,7 +17,7 @@ interface FormData {
     password: string;
     email: string;
     phone: string;
-    role: string;
+    role: USER_ROLE;
 }
 
 interface Errors {
@@ -38,20 +38,25 @@ interface Touched {
 
 type FieldName = keyof FormData;
 
-// Role enum
-enum UserRole {
-    TEACHER = '1',
-    STUDENT = '2',
-    PARENT = '3',
+// Role enum matching the API
+export enum USER_ROLE {
+    USER = 0,
+    TEACHER = 1,
+    STUDENT = 2,
+    PARENT = 3,
+    ADMIN = 4,
 }
 
 export default function RegisterForm() {
+    const navigate = useNavigate();
+    const { signup } = useAuthStore();
+
     const [formData, setFormData] = useState<FormData>({
         username: '',
         password: '',
         email: '',
         phone: '',
-        role: UserRole.STUDENT, // Default to Student
+        role: USER_ROLE.STUDENT, // Default to Student
     });
 
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -155,6 +160,22 @@ export default function RegisterForm() {
         }));
     };
 
+    const handleRoleChange = (value: string): void => {
+        const roleValue = parseInt(value) as USER_ROLE;
+        setFormData((prev) => ({
+            ...prev,
+            role: roleValue,
+        }));
+
+        if (touched.role) {
+            const error = validateField('role', roleValue);
+            setErrors((prev) => ({
+                ...prev,
+                role: error,
+            }));
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
 
@@ -183,16 +204,43 @@ export default function RegisterForm() {
 
         setIsLoading(true);
 
-        // Simulate registration process
-        setTimeout(() => {
+        try {
+            // Prepare credentials for API call
+            const credentials = {
+                username: formData.username,
+                password: formData.password,
+                email: formData.email || undefined,
+                phone: formData.phone || undefined,
+                role: formData.role,
+            };
+
+            await signup(credentials);
+
+            // Navigate to login page after successful registration
+            navigate({ to: '/login' });
+        } catch (error) {
+            console.error('Registration failed:', error);
+            // Error is already handled by the store (toast notification)
+        } finally {
             setIsLoading(false);
-            alert('Đăng ký thành công!');
-            // You would typically redirect to login or dashboard here
-        }, 2000);
+        }
     };
 
     const togglePasswordVisibility = (): void => {
         setShowPassword(!showPassword);
+    };
+
+    const getRoleDisplayName = (role: USER_ROLE): string => {
+        switch (role) {
+            case USER_ROLE.TEACHER:
+                return 'Giáo Viên';
+            case USER_ROLE.STUDENT:
+                return 'Học Sinh';
+            case USER_ROLE.PARENT:
+                return 'Phụ Huynh';
+            default:
+                return 'Học Sinh';
+        }
     };
 
     return (
@@ -205,7 +253,7 @@ export default function RegisterForm() {
 
             <div className="relative w-full max-w-md">
                 {/* Main registration card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 transform hover:scale-105 transition-all duration-300">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8 transform transition-all duration-300">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-35 h-16 rounded-2xl">
@@ -400,7 +448,7 @@ export default function RegisterForm() {
                         {/* Role field */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">
-                                Bạn là ?
+                                Bạn là ? <span className="text-red-500">*</span>
                             </label>
                             {errors.role && touched.role && (
                                 <p className="text-red-500 text-sm flex items-center bg-red-50 p-2 rounded-lg border border-red-200">
@@ -419,22 +467,27 @@ export default function RegisterForm() {
                                 </p>
                             )}
                             <div className="relative">
-                                <Select defaultValue={UserRole.STUDENT}>
-                                    <SelectTrigger className="w-full ">
+                                <Select
+                                    defaultValue={USER_ROLE.STUDENT.toString()}
+                                    onValueChange={handleRoleChange}
+                                >
+                                    <SelectTrigger className="w-full">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
                                             <SelectItem
-                                                value={UserRole.STUDENT}
+                                                value={USER_ROLE.STUDENT.toString()}
                                             >
                                                 Học Sinh
                                             </SelectItem>
-                                            <SelectItem value={UserRole.PARENT}>
+                                            <SelectItem
+                                                value={USER_ROLE.PARENT.toString()}
+                                            >
                                                 Phụ Huynh
                                             </SelectItem>
                                             <SelectItem
-                                                value={UserRole.TEACHER}
+                                                value={USER_ROLE.TEACHER.toString()}
                                             >
                                                 Giáo Viên
                                             </SelectItem>
