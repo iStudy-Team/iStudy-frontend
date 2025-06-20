@@ -5,8 +5,9 @@ import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { clientRoute } from '@/routes/client';
 import { rootRoute } from '@/routes/__root.tsx';
 import { authRoute } from './routes/auth';
+import { admintRoute } from './routes/admin';
 
-const routeTree = rootRoute.addChildren([clientRoute, authRoute]);
+const routeTree = rootRoute.addChildren([clientRoute, authRoute, admintRoute]);
 
 declare module '@tanstack/react-router' {
     interface Register {
