@@ -6,6 +6,9 @@ import JumpStartPage from '@/pages/jumpStart';
 import SmartTeenPage from '@/pages/smartTeen';
 import BusinessCoursePage from '@/pages/businessCourse';
 import IeltsCourseCoursePage from '@/pages/ieltsCourse';
+import AboutPage from '@/pages/about';
+import FacilityPage from '@/pages/facility';
+import TeacherPage from '@/pages/teacherPage';
 
 const _clientRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -39,5 +42,23 @@ export const clientRoute = _clientRoute.addChildren([
         getParentRoute: () => _clientRoute,
         path: '/chuong-trinh-luyen-thi-ielts-sat',
         component: () => <IeltsCourseCoursePage />,
+    }),
+
+    createRoute({
+        getParentRoute: () => _clientRoute,
+        path: '/about',
+        component: () => <AboutPage />,
+    }),
+
+    createRoute({
+        getParentRoute: () => _clientRoute,
+        path: '/co-so-vat-chat',
+        component: () => <FacilityPage />,
+    }),
+
+    createRoute({
+        getParentRoute: () => _clientRoute,
+        path: '/giao-vien',
+        component: () => <TeacherPage />,
     }),
 ]);
