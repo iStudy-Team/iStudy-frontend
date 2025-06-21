@@ -11,11 +11,32 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as TeacherImport } from './routes/teacher'
+import { Route as StudentImport } from './routes/student'
+import { Route as ParentImport } from './routes/parent'
 import { Route as ClientImport } from './routes/client'
 import { Route as AuthImport } from './routes/auth'
 import { Route as AdminImport } from './routes/admin'
 
 // Create/Update Routes
+
+const TeacherRoute = TeacherImport.update({
+  id: '/teacher',
+  path: '/teacher',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const StudentRoute = StudentImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ParentRoute = ParentImport.update({
+  id: '/parent',
+  path: '/parent',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const ClientRoute = ClientImport.update({
   id: '/client',
@@ -60,6 +81,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientImport
       parentRoute: typeof rootRoute
     }
+    '/parent': {
+      id: '/parent'
+      path: '/parent'
+      fullPath: '/parent'
+      preLoaderRoute: typeof ParentImport
+      parentRoute: typeof rootRoute
+    }
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentImport
+      parentRoute: typeof rootRoute
+    }
+    '/teacher': {
+      id: '/teacher'
+      path: '/teacher'
+      fullPath: '/teacher'
+      preLoaderRoute: typeof TeacherImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -69,12 +111,18 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
+  '/parent': typeof ParentRoute
+  '/student': typeof StudentRoute
+  '/teacher': typeof TeacherRoute
 }
 
 export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
+  '/parent': typeof ParentRoute
+  '/student': typeof StudentRoute
+  '/teacher': typeof TeacherRoute
 }
 
 export interface FileRoutesById {
@@ -82,14 +130,30 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/client': typeof ClientRoute
+  '/parent': typeof ParentRoute
+  '/student': typeof StudentRoute
+  '/teacher': typeof TeacherRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/admin' | '/auth' | '/client'
+  fullPaths:
+    | '/admin'
+    | '/auth'
+    | '/client'
+    | '/parent'
+    | '/student'
+    | '/teacher'
   fileRoutesByTo: FileRoutesByTo
-  to: '/admin' | '/auth' | '/client'
-  id: '__root__' | '/admin' | '/auth' | '/client'
+  to: '/admin' | '/auth' | '/client' | '/parent' | '/student' | '/teacher'
+  id:
+    | '__root__'
+    | '/admin'
+    | '/auth'
+    | '/client'
+    | '/parent'
+    | '/student'
+    | '/teacher'
   fileRoutesById: FileRoutesById
 }
 
@@ -97,12 +161,18 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ClientRoute: typeof ClientRoute
+  ParentRoute: typeof ParentRoute
+  StudentRoute: typeof StudentRoute
+  TeacherRoute: typeof TeacherRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ClientRoute: ClientRoute,
+  ParentRoute: ParentRoute,
+  StudentRoute: StudentRoute,
+  TeacherRoute: TeacherRoute,
 }
 
 export const routeTree = rootRoute
@@ -117,7 +187,10 @@ export const routeTree = rootRoute
       "children": [
         "/admin",
         "/auth",
-        "/client"
+        "/client",
+        "/parent",
+        "/student",
+        "/teacher"
       ]
     },
     "/admin": {
@@ -128,6 +201,15 @@ export const routeTree = rootRoute
     },
     "/client": {
       "filePath": "client.tsx"
+    },
+    "/parent": {
+      "filePath": "parent.tsx"
+    },
+    "/student": {
+      "filePath": "student.tsx"
+    },
+    "/teacher": {
+      "filePath": "teacher.tsx"
     }
   }
 }
