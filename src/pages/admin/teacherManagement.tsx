@@ -17,7 +17,6 @@ import {
     Award,
     DollarSign,
 } from 'lucide-react';
-
 interface Teacher {
     id: string;
     name: string;

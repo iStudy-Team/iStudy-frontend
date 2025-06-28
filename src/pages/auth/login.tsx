@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNavigate } from '@tanstack/react-router';
+import { USER_ROLE } from '@/types/user';
+import { LOCALSTORAGE_KEY } from '@/types/localstorage';
 
 // Interfaces
 interface FormData {
@@ -31,6 +34,8 @@ interface Touched {
 type FieldName = keyof FormData;
 
 export default function LoginInterface() {
+    const token = localStorage.getItem(LOCALSTORAGE_KEY.ACCESS_TOKEN) || '';
+    const navigate = useNavigate();
     const [formData, setFormData] = useState<FormData>({
         loginId: '',
         password: '',
@@ -49,6 +54,9 @@ export default function LoginInterface() {
         'text'
     );
     const { login, logout, isAuthenticated } = useAuthStore();
+    const user = localStorage.getItem(LOCALSTORAGE_KEY.USER)
+        ? JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY.USER) as string)
+        : null;
 
     // Stop loading when authentication state changes
     useEffect(() => {
@@ -69,10 +77,6 @@ export default function LoginInterface() {
 
     const validateUsername = (username: string): boolean => {
         return username.length >= 3 && username.length <= 20;
-    };
-
-    const validatePassword = (password: string): boolean => {
-        return password.length >= 6;
     };
 
     const detectInputType = (value: string): 'text' | 'email' | 'tel' => {
@@ -109,8 +113,6 @@ export default function LoginInterface() {
         } else if (name === 'password') {
             if (!value.trim()) {
                 return 'Mật khẩu không được để trống';
-            } else if (!validatePassword(value)) {
-                return 'Mật khẩu phải có ít nhất 6 ký tự';
             }
         }
         return '';
@@ -179,10 +181,14 @@ export default function LoginInterface() {
         setIsLoading(true);
 
         try {
-            await login({
+            const res = await login({
                 credential: formData.loginId,
                 password: formData.password,
             });
+
+            if (res.user.role === USER_ROLE.ADMIN) {
+                navigate({ to: '/admin' });
+            }
         } catch (error) {
             // Handle login error
             console.error('Login failed:', error);
@@ -218,7 +224,7 @@ export default function LoginInterface() {
     };
 
     // Render authenticated state
-    if (isAuthenticated) {
+    if (isAuthenticated || token.length > 0 || user) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
                 {/* Background decoration */}
@@ -261,7 +267,19 @@ export default function LoginInterface() {
                         {/* Action buttons */}
                         <div className="space-y-4">
                             <Link
-                                to="/dashboard"
+                                to={
+                                    user?.role === USER_ROLE.ADMIN
+                                        ? '/admin'
+                                        : user?.role === USER_ROLE.USER
+                                          ? '/'
+                                          : user?.role === USER_ROLE.PARENT
+                                            ? '/parent'
+                                            : user?.role === USER_ROLE.STUDENT
+                                              ? '/student'
+                                              : user?.role === USER_ROLE.TEACHER
+                                                ? '/teacher'
+                                                : '/'
+                                }
                                 className="w-full flex items-center justify-center py-3 px-4 rounded-xl font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl transition-all duration-200"
                             >
                                 <LayoutDashboard className="w-5 h-5 mr-2" />

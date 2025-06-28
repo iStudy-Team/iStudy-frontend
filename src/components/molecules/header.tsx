@@ -1,4 +1,4 @@
-import { Link, useRouter, useLocation } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import {
     Breadcrumb,
     BreadcrumbEllipsis,
@@ -24,7 +24,6 @@ interface BreadcrumbItem {
 }
 
 const Header = () => {
-    const router = useRouter();
     const location = useLocation(); // Sử dụng useLocation để theo dõi thay đổi route
     const pathname = location.pathname;
     const pathSegments = pathname.split('/').filter(Boolean);
@@ -44,6 +43,9 @@ const Header = () => {
         return items;
     }, [pathSegments]); // pathSegments thay đổi khi pathname thay đổi
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
     if (pathSegments.length === 0) {
         return null;
     }
@@ -51,12 +53,10 @@ const Header = () => {
     const isRouteActive = (href: string) => {
         return pathname === href;
     };
-    const [searchQuery, setSearchQuery] = useState('');
-    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
     return (
-        <div className="max-w-full bg-opacity-1">
-            <div className="flex h-16 -mb-[55px]">
+        <div className="max-w-full bg-opacity-1 flex items-center">
+            <div className="px-4 h-16 -mb-[55px] w-full flex items-center justify-between">
                 {/* Left side - Breadcrumb and Title */}
                 <div className="mt-2">
                     <Breadcrumb>

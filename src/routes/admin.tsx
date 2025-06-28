@@ -8,6 +8,7 @@ import ParentManagement from '@/pages/admin/parentManagement';
 import StudentManagement from '@/pages/admin/studentManagement';
 import FeeManage from '@/pages/admin/feeManage';
 import BankAccountViewer from '@/pages/admin/bankAccount';
+import CourseGradeManagement from '@/pages/admin/academicManagement';
 
 const _admintRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -25,6 +26,11 @@ export const admintRoute = _admintRoute.addChildren([
         getParentRoute: () => _admintRoute,
         path: '/class-management',
         component: () => <ClassManagementAdmin />,
+    }),
+    createRoute({
+        getParentRoute: () => _admintRoute,
+        path: '/academic-management',
+        component: () => <CourseGradeManagement />,
     }),
     createRoute({
         getParentRoute: () => _admintRoute,

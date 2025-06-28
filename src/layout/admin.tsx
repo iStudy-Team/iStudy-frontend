@@ -10,7 +10,7 @@ export default function AdminLayout() {
                 <SidebarAdmin />
             </div>
             <div className="min-h-screen flex-1 overflow-auto">
-                <div className="mb-15 bg-white">
+                <div className="mb-15 bg-white w-full">
                     <Header />
                 </div>
                 <Outlet />

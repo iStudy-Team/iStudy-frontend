@@ -31,12 +31,10 @@ api.interceptors.response.use(
             const errorData = error.response.data as ErrorResponseData;
 
             if (errorData.message) {
-                console.error('Backend Error:', errorData.message);
                 throw new Error(errorData.message);
             }
 
             if (errorData.error) {
-                console.error('Backend Error:', errorData.error);
                 throw new Error(errorData.error);
             }
         }

@@ -18,7 +18,9 @@ import { toast } from 'sonner';
 interface AuthState {
     user: IUser | null;
     isAuthenticated: boolean;
-    login: (credentials: CredentialsLogin) => Promise<void>;
+    login: (
+        credentials: CredentialsLogin
+    ) => Promise<{ user: IUser; token: string }>;
     signup: (credentials: CredentialsSignup) => Promise<void>;
     forgotPassword: (credentials: ForgotPassWordCredentials) => Promise<void>;
     resetPassword: (credentials: ResetPasswordCredentials) => Promise<void>;
@@ -43,6 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                 );
                 set({ user: response.user, isAuthenticated: true });
                 toast.success('Login successful');
+                return { user: response.user, token: response.token };
             } else {
                 toast.error(response.message || 'Login failed');
                 throw new Error(response.message || 'Login failed');

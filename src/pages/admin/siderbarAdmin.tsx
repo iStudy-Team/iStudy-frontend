@@ -2,8 +2,7 @@ import React from 'react';
 import {
     Home,
     BarChart3,
-    CreditCard,
-    Wrench,
+    GraduationCap,
     User,
     Users,
     School,
@@ -68,6 +67,12 @@ export default function SidebarAdmin() {
             icon: Users,
             color: 'text-teal-400',
             path: '/admin/parent-management',
+        },
+        {
+            name: 'Quản Lý Học Vụ',
+            icon: GraduationCap,
+            color: 'text-teal-400',
+            path: '/admin/academic-management',
         },
         {
             name: 'Quản Lý Lớp Học',
