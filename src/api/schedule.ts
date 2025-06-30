@@ -1,4 +1,5 @@
 import { api } from './api';
+import { Class } from './class';
 
 export interface Schedule {
     id: string;
@@ -6,6 +7,7 @@ export interface Schedule {
     day?: Date;
     start_time?: Date,
     end_time?: Date,
+    class?: Class;
 }
 
 export type ScheduleCredentials = Pick<

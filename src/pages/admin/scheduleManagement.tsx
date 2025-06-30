@@ -23,6 +23,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { DialogSchedule } from '@/components/dialogSchedule';
+import { DialogScheduleDetails } from '@/components/dialogScheduleDetails';
 import { useScheduleStore } from '@/store/useScheduleStore';
 import { useClassStore } from '@/store/useClassStore';
 import { Schedule } from '@/api/schedule';
@@ -223,6 +224,11 @@ export default function ScheduleManagementAdmin() {
     const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(
         null
     );
+    const [viewingSchedule, setViewingSchedule] = useState<Schedule | null>(
+        null
+    );
+    const [showScheduleDetailsDialog, setShowScheduleDetailsDialog] =
+        useState(false);
 
     // Fetch data on component mount
     useEffect(() => {
@@ -268,8 +274,8 @@ export default function ScheduleManagementAdmin() {
     };
 
     const handleViewDetails = (scheduleData: Schedule) => {
-        console.log('View details:', scheduleData);
-        // Implement view details functionality
+        setViewingSchedule(scheduleData);
+        setShowScheduleDetailsDialog(true);
     };
 
     const handleDialogSuccess = () => {
@@ -537,6 +543,16 @@ export default function ScheduleManagementAdmin() {
                     </div>
                 )}
             </div>
+
+            {/* Schedule Details Dialog */}
+            <DialogScheduleDetails
+                isOpen={showScheduleDetailsDialog}
+                onClose={() => {
+                    setShowScheduleDetailsDialog(false);
+                    setViewingSchedule(null);
+                }}
+                schedule={viewingSchedule}
+            />
         </div>
     );
 }
