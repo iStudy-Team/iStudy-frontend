@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Plus,
     Search,
@@ -6,71 +6,65 @@ import {
     Edit3,
     Trash2,
     User,
-    Mail,
-    Phone,
-    BookOpen,
     Calendar,
     Eye,
-    X,
     AlertCircle,
     Users,
     Award,
     GraduationCap,
     MapPin,
-    Heart,
+    Loader2,
 } from 'lucide-react';
+import { useStudentStore } from '@/store/useStudentStore';
+import { Student, StudentStatus } from '@/api/student';
 
-interface Student {
-    id: string;
-    studentId: string;
-    name: string;
-    email: string;
-    phone: string;
-    class: string;
-    grade: number;
-    dateOfBirth: string;
-    address: string;
-    parentName: string;
-    parentPhone: string;
-    parentEmail: string;
-    status: 'active' | 'inactive' | 'graduated';
-    enrollmentDate: string;
-    gpa: number;
-    attendance: number;
-    medicalInfo: string;
-    photo?: string;
+interface StudentCardProps {
+    student: Student;
+    onEdit: (student: Student) => void;
+    onDelete: (studentId: string) => void;
+    onViewDetails: (student: Student) => void;
 }
 
-const StudentCard = ({ student, onEdit, onDelete, onViewDetails }: any) => {
+const StudentCard = ({
+    student,
+    onEdit,
+    onDelete,
+    onViewDetails,
+}: StudentCardProps) => {
     const [showDropdown, setShowDropdown] = useState(false);
 
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: StudentStatus) => {
         switch (status) {
-            case 'active':
+            case StudentStatus.ACTIVE:
                 return 'bg-green-100 text-green-700';
-            case 'inactive':
+            case StudentStatus.INACTIVE:
                 return 'bg-red-100 text-red-700';
-            case 'graduated':
+            case StudentStatus.GRADUATED:
                 return 'bg-blue-100 text-blue-700';
+            case StudentStatus.SUSPENDED:
+                return 'bg-yellow-100 text-yellow-700';
             default:
                 return 'bg-gray-100 text-gray-700';
         }
     };
 
-    const getStatusText = (status: string) => {
+    const getStatusText = (status: StudentStatus) => {
         switch (status) {
-            case 'active':
+            case StudentStatus.ACTIVE:
                 return 'Đang học';
-            case 'inactive':
+            case StudentStatus.INACTIVE:
                 return 'Nghỉ học';
-            case 'graduated':
+            case StudentStatus.GRADUATED:
                 return 'Đã tốt nghiệp';
+            case StudentStatus.SUSPENDED:
+                return 'Tạm ngưng';
             default:
                 return 'Không xác định';
         }
     };
 
-    const calculateAge = (dateOfBirth: string) => {
+    const calculateAge = (dateOfBirth?: Date) => {
+        if (!dateOfBirth) return 'N/A';
         const today = new Date();
         const birthDate = new Date(dateOfBirth);
         let age = today.getFullYear() - birthDate.getFullYear();
@@ -90,18 +84,18 @@ const StudentCard = ({ student, onEdit, onDelete, onViewDetails }: any) => {
                 <div className="flex items-center space-x-3">
                     <div
                         className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            student.status === 'active'
+                            student.status === StudentStatus.ACTIVE
                                 ? 'bg-blue-100'
-                                : student.status === 'graduated'
+                                : student.status === StudentStatus.GRADUATED
                                   ? 'bg-green-100'
                                   : 'bg-gray-100'
                         }`}
                     >
                         <User
                             className={`w-6 h-6 ${
-                                student.status === 'active'
+                                student.status === StudentStatus.ACTIVE
                                     ? 'text-blue-600'
-                                    : student.status === 'graduated'
+                                    : student.status === StudentStatus.GRADUATED
                                       ? 'text-green-600'
                                       : 'text-gray-400'
                             }`}
@@ -109,10 +103,10 @@ const StudentCard = ({ student, onEdit, onDelete, onViewDetails }: any) => {
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-800">
-                            {student.name}
+                            {student.full_name}
                         </h3>
                         <p className="text-sm text-gray-500">
-                            Mã HS: {student.studentId}
+                            ID: {student.id}
                         </p>
                     </div>
                 </div>
@@ -169,27 +163,13 @@ const StudentCard = ({ student, onEdit, onDelete, onViewDetails }: any) => {
 
             <div className="space-y-3">
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <BookOpen className="w-4 h-4" />
-                    <span>
-                        Lớp {student.class} - Khối {student.grade}
-                    </span>
+                    <User className="w-4 h-4" />
+                    <span>ID: {student.user_id}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
-                    <span>{calculateAge(student.dateOfBirth)} tuổi</span>
+                    <span>{calculateAge(student.date_of_birth)} tuổi</span>
                 </div>
-                {student.email && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Mail className="w-4 h-4" />
-                        <span className="truncate">{student.email}</span>
-                    </div>
-                )}
-                {student.phone && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Phone className="w-4 h-4" />
-                        <span>{student.phone}</span>
-                    </div>
-                )}
                 {student.address && (
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <MapPin className="w-4 h-4" />
@@ -203,34 +183,32 @@ const StudentCard = ({ student, onEdit, onDelete, onViewDetails }: any) => {
                     <div className="flex items-center space-x-4">
                         <div className="text-center">
                             <p className="font-medium text-gray-900">
-                                {student.gpa.toFixed(1)}
+                                {student.discount_percentage}%
                             </p>
-                            <p className="text-xs text-gray-500">Điểm TB</p>
+                            <p className="text-xs text-gray-500">Giảm giá</p>
                         </div>
                         <div className="text-center">
                             <p className="font-medium text-gray-900">
-                                {student.attendance}%
+                                {student.enrollment_date
+                                    ? new Date(
+                                          student.enrollment_date
+                                      ).toLocaleDateString('vi-VN')
+                                    : 'N/A'}
                             </p>
-                            <p className="text-xs text-gray-500">Điểm danh</p>
+                            <p className="text-xs text-gray-500">
+                                Ngày nhập học
+                            </p>
                         </div>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-xs text-gray-500">
-                            PH: {student.parentName}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                            {student.parentPhone}
-                        </p>
                     </div>
                 </div>
             </div>
 
-            {student.medicalInfo && (
-                <div className="mt-3 p-2 bg-red-50 rounded-lg">
+            {student.discount_reason && (
+                <div className="mt-3 p-2 bg-blue-50 rounded-lg">
                     <div className="flex items-center space-x-2">
-                        <Heart className="w-4 h-4 text-red-500" />
-                        <span className="text-xs text-red-700 font-medium">
-                            Có thông tin y tế
+                        <AlertCircle className="w-4 h-4 text-blue-500" />
+                        <span className="text-xs text-blue-700 font-medium">
+                            {student.discount_reason}
                         </span>
                     </div>
                 </div>
@@ -240,97 +218,26 @@ const StudentCard = ({ student, onEdit, onDelete, onViewDetails }: any) => {
 };
 
 export default function StudentManagement() {
-    const [students, setStudents] = useState<Student[]>([
-        {
-            id: '1',
-            studentId: 'HS2024001',
-            name: 'Nguyễn Văn An',
-            email: 'an.nguyen@student.edu.vn',
-            phone: '0123456789',
-            class: '3A',
-            grade: 3,
-            dateOfBirth: '2015-05-15',
-            address: '123 Đường Láng, Đống Đa, Hà Nội',
-            parentName: 'Nguyễn Văn Bình',
-            parentPhone: '0987654321',
-            parentEmail: 'binh.nguyen@gmail.com',
-            status: 'active',
-            enrollmentDate: '2022-09-01',
-            gpa: 8.5,
-            attendance: 95,
-            medicalInfo: 'Dị ứng với tôm, cua',
-        },
-        {
-            id: '2',
-            studentId: 'HS2024002',
-            name: 'Trần Thị Bích',
-            email: '',
-            phone: '',
-            class: '4B',
-            grade: 4,
-            dateOfBirth: '2014-08-20',
-            address: '456 Giải Phóng, Hai Bà Trưng, Hà Nội',
-            parentName: 'Trần Văn Cường',
-            parentPhone: '0909123456',
-            parentEmail: 'cuong.tran@gmail.com',
-            status: 'active',
-            enrollmentDate: '2021-09-01',
-            gpa: 9.2,
-            attendance: 98,
-            medicalInfo: '',
-        },
-        {
-            id: '3',
-            studentId: 'HS2024003',
-            name: 'Lê Minh Đức',
-            email: 'duc.le@student.edu.vn',
-            phone: '0333444555',
-            class: '5A',
-            grade: 5,
-            dateOfBirth: '2013-12-10',
-            address: '789 Cầu Giấy, Cầu Giấy, Hà Nội',
-            parentName: 'Lê Thị Hoa',
-            parentPhone: '0888777666',
-            parentEmail: 'hoa.le@gmail.com',
-            status: 'active',
-            enrollmentDate: '2020-09-01',
-            gpa: 7.8,
-            attendance: 92,
-            medicalInfo: 'Cận thị, đeo kính',
-        },
-        {
-            id: '4',
-            studentId: 'HS2023015',
-            name: 'Phạm Thị Lan',
-            email: '',
-            phone: '',
-            class: '6A',
-            grade: 6,
-            dateOfBirth: '2012-03-25',
-            address: '321 Hoàng Hoa Thám, Ba Đình, Hà Nội',
-            parentName: 'Phạm Văn Minh',
-            parentPhone: '0777888999',
-            parentEmail: 'minh.pham@gmail.com',
-            status: 'graduated',
-            enrollmentDate: '2019-09-01',
-            gpa: 8.9,
-            attendance: 96,
-            medicalInfo: '',
-        },
-    ]);
+    const { students, loading, getAllStudents, deleteStudent } =
+        useStudentStore();
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterClass, setFilterClass] = useState('all');
-    const [filterGrade, setFilterGrade] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    // Fetch students when component mounts
+    useEffect(() => {
+        getAllStudents();
+    }, [getAllStudents]);
 
     const handleEdit = (student: Student) => {
         console.log('Edit student:', student);
+        // Note: Edit functionality disabled per requirements, but API/store still supports it
     };
 
     const handleDelete = (studentId: string) => {
-        setStudents(students.filter((s) => s.id !== studentId));
+        if (window.confirm('Bạn có chắc chắn muốn xóa học sinh này?')) {
+            deleteStudent(studentId);
+        }
     };
 
     const handleViewDetails = (student: Student) => {
@@ -339,40 +246,44 @@ export default function StudentManagement() {
 
     const filteredStudents = students.filter((student) => {
         const matchesSearch =
-            student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.studentId
+            student.full_name
                 .toLowerCase()
                 .includes(searchTerm.toLowerCase()) ||
-            student.parentName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesClass =
-            filterClass === 'all' || student.class === filterClass;
-        const matchesGrade =
-            filterGrade === 'all' || student.grade.toString() === filterGrade;
-        const matchesStatus =
-            filterStatus === 'all' || student.status === filterStatus;
+            student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.user_id.toLowerCase().includes(searchTerm.toLowerCase());
 
-        return matchesSearch && matchesClass && matchesGrade && matchesStatus;
+        const matchesStatus =
+            filterStatus === 'all' ||
+            (filterStatus === 'active' &&
+                student.status === StudentStatus.ACTIVE) ||
+            (filterStatus === 'inactive' &&
+                student.status === StudentStatus.INACTIVE) ||
+            (filterStatus === 'graduated' &&
+                student.status === StudentStatus.GRADUATED) ||
+            (filterStatus === 'suspended' &&
+                student.status === StudentStatus.SUSPENDED);
+
+        return matchesSearch && matchesStatus;
     });
 
     const stats = {
         total: students.length,
-        active: students.filter((s) => s.status === 'active').length,
-        inactive: students.filter((s) => s.status === 'inactive').length,
-        graduated: students.filter((s) => s.status === 'graduated').length,
-        avgGpa:
-            students
-                .filter((s) => s.status === 'active')
-                .reduce((sum, s) => sum + s.gpa, 0) /
-            students.filter((s) => s.status === 'active').length,
-        avgAttendance:
-            students
-                .filter((s) => s.status === 'active')
-                .reduce((sum, s) => sum + s.attendance, 0) /
-            students.filter((s) => s.status === 'active').length,
+        active: students.filter((s) => s.status === StudentStatus.ACTIVE)
+            .length,
+        inactive: students.filter((s) => s.status === StudentStatus.INACTIVE)
+            .length,
+        graduated: students.filter((s) => s.status === StudentStatus.GRADUATED)
+            .length,
+        suspended: students.filter((s) => s.status === StudentStatus.SUSPENDED)
+            .length,
+        avgDiscount:
+            students.length > 0
+                ? students.reduce(
+                      (sum, s) => sum + Number(s.discount_percentage),
+                      0
+                  ) / students.length
+                : 0,
     };
-
-    const classes = [...new Set(students.map((s) => s.class))].sort();
-    const grades = [...new Set(students.map((s) => s.grade))].sort();
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -443,14 +354,14 @@ export default function StudentManagement() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">
-                                    Nghỉ học
+                                    Tạm ngưng
                                 </p>
-                                <p className="text-2xl font-bold text-red-600">
-                                    {stats.inactive}
+                                <p className="text-2xl font-bold text-yellow-600">
+                                    {stats.suspended}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                                <AlertCircle className="w-6 h-6 text-red-600" />
+                            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <AlertCircle className="w-6 h-6 text-yellow-600" />
                             </div>
                         </div>
                     </div>
@@ -459,10 +370,10 @@ export default function StudentManagement() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">
-                                    Điểm TB
+                                    Giảm giá TB
                                 </p>
                                 <p className="text-2xl font-bold text-purple-600">
-                                    {stats.avgGpa.toFixed(1)}
+                                    {stats.avgDiscount.toFixed(1)}%
                                 </p>
                             </div>
                             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -475,14 +386,14 @@ export default function StudentManagement() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">
-                                    Điểm danh
+                                    Tổng sinh viên
                                 </p>
                                 <p className="text-2xl font-bold text-orange-600">
-                                    {stats.avgAttendance.toFixed(0)}%
+                                    {stats.total}
                                 </p>
                             </div>
                             <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <Calendar className="w-6 h-6 text-orange-600" />
+                                <Users className="w-6 h-6 text-orange-600" />
                             </div>
                         </div>
                     </div>
@@ -510,32 +421,6 @@ export default function StudentManagement() {
                         <div className="flex space-x-3">
                             <select
                                 className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                value={filterGrade}
-                                onChange={(e) => setFilterGrade(e.target.value)}
-                            >
-                                <option value="all">Tất cả khối</option>
-                                {grades.map((grade) => (
-                                    <option key={grade} value={grade}>
-                                        Khối {grade}
-                                    </option>
-                                ))}
-                            </select>
-
-                            <select
-                                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                value={filterClass}
-                                onChange={(e) => setFilterClass(e.target.value)}
-                            >
-                                <option value="all">Tất cả lớp</option>
-                                {classes.map((cls) => (
-                                    <option key={cls} value={cls}>
-                                        Lớp {cls}
-                                    </option>
-                                ))}
-                            </select>
-
-                            <select
-                                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 value={filterStatus}
                                 onChange={(e) =>
                                     setFilterStatus(e.target.value)
@@ -545,13 +430,23 @@ export default function StudentManagement() {
                                 <option value="active">Đang học</option>
                                 <option value="inactive">Nghỉ học</option>
                                 <option value="graduated">Tốt nghiệp</option>
+                                <option value="suspended">Tạm ngưng</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
                 {/* Students Grid */}
-                {filteredStudents.length > 0 ? (
+                {loading ? (
+                    <div className="bg-white rounded-xl p-12 shadow-sm text-center">
+                        <div className="flex justify-center items-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+                            <span className="ml-2 text-gray-600">
+                                Đang tải dữ liệu...
+                            </span>
+                        </div>
+                    </div>
+                ) : filteredStudents.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredStudents.map((student) => (
                             <StudentCard
@@ -575,7 +470,11 @@ export default function StudentManagement() {
                             </p>
                             <div className="mt-6">
                                 <button
-                                    onClick={() => setIsCreateModalOpen(true)}
+                                    onClick={() =>
+                                        console.log(
+                                            'Create student feature not implemented'
+                                        )
+                                    }
                                     className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                                 >
                                     <Plus className="-ml-1 mr-2 h-5 w-5" />

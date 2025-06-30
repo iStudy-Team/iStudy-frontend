@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Plus,
     Search,
@@ -8,109 +8,103 @@ import {
     User,
     Mail,
     Phone,
-    BookOpen,
-    Calendar,
     Eye,
-    X,
     AlertCircle,
     Users,
-    Award,
-    GraduationCap,
     MapPin,
-    Heart,
-    Briefcase,
-    Home,
     UserCheck,
+    Loader2,
 } from 'lucide-react';
+import { useParentStore } from '@/store/useParentStore';
+import { Parent, ParentStatus } from '@/api/parent';
 
-interface Parent {
-    id: string;
-    parentId: string;
-    name: string;
-    email: string;
-    phone: string;
-    dateOfBirth: string;
-    address: string;
-    occupation: string;
-    workAddress: string;
-    workPhone: string;
-    relationship: 'father' | 'mother' | 'guardian';
-    emergencyContact: string;
-    emergencyPhone: string;
-    status: 'active' | 'inactive';
-    children: {
-        studentId: string;
-        name: string;
-        class: string;
-    }[];
-    notes: string;
-    photo?: string;
+interface ParentCardProps {
+    parent: Parent;
+    onEdit: (parent: Parent) => void;
+    onDelete: (parentId: string) => void;
+    onViewDetails: (parent: Parent) => void;
 }
 
-const ParentCard = ({ parent, onEdit, onDelete, onViewDetails }: any) => {
+const ParentCard = ({
+    parent,
+    onEdit,
+    onDelete,
+    onViewDetails,
+}: ParentCardProps) => {
     const [showDropdown, setShowDropdown] = useState(false);
 
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: ParentStatus) => {
         switch (status) {
-            case 'active':
+            case ParentStatus.ACTIVE:
                 return 'bg-green-100 text-green-700';
-            case 'inactive':
+            case ParentStatus.INACTIVE:
                 return 'bg-red-100 text-red-700';
             default:
                 return 'bg-gray-100 text-gray-700';
         }
     };
 
-    const getStatusText = (status: string) => {
+    const getStatusText = (status: ParentStatus) => {
         switch (status) {
-            case 'active':
+            case ParentStatus.ACTIVE:
                 return 'Hoạt động';
-            case 'inactive':
+            case ParentStatus.INACTIVE:
                 return 'Không hoạt động';
             default:
                 return 'Không xác định';
         }
     };
 
-    const getRelationshipText = (relationship: string) => {
-        switch (relationship) {
-            case 'father':
-                return 'Bố';
-            case 'mother':
-                return 'Mẹ';
-            case 'guardian':
-                return 'Người giám hộ';
-            default:
-                return 'Không xác định';
-        }
-    };
-
-    const getRelationshipColor = (relationship: string) => {
-        switch (relationship) {
-            case 'father':
-                return 'bg-blue-100 text-blue-700';
-            case 'mother':
-                return 'bg-pink-100 text-pink-700';
-            case 'guardian':
-                return 'bg-purple-100 text-purple-700';
-            default:
-                return 'bg-gray-100 text-gray-700';
-        }
-    };
-
-    const calculateAge = (dateOfBirth: string) => {
-        if (!dateOfBirth) return null;
-        const today = new Date();
-        const birthDate = new Date(dateOfBirth);
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
+    const getRelationshipText = (relationship?: string) => {
+        if (!relationship) return 'Không xác định';
+        const relationshipLower = relationship.toLowerCase();
         if (
-            monthDiff < 0 ||
-            (monthDiff === 0 && today.getDate() < birthDate.getDate())
+            relationshipLower.includes('father') ||
+            relationshipLower.includes('bố') ||
+            relationshipLower.includes('cha')
         ) {
-            age--;
+            return 'Bố';
         }
-        return age;
+        if (
+            relationshipLower.includes('mother') ||
+            relationshipLower.includes('mẹ') ||
+            relationshipLower.includes('má')
+        ) {
+            return 'Mẹ';
+        }
+        if (
+            relationshipLower.includes('guardian') ||
+            relationshipLower.includes('giám hộ')
+        ) {
+            return 'Người giám hộ';
+        }
+        return relationship;
+    };
+
+    const getRelationshipColor = (relationship?: string) => {
+        if (!relationship) return 'bg-gray-100 text-gray-700';
+        const relationshipLower = relationship.toLowerCase();
+        if (
+            relationshipLower.includes('father') ||
+            relationshipLower.includes('bố') ||
+            relationshipLower.includes('cha')
+        ) {
+            return 'bg-blue-100 text-blue-700';
+        }
+        if (
+            relationshipLower.includes('mother') ||
+            relationshipLower.includes('mẹ') ||
+            relationshipLower.includes('má')
+        ) {
+            return 'bg-pink-100 text-pink-700';
+        }
+        if (
+            relationshipLower.includes('guardian') ||
+            relationshipLower.includes('giám hộ')
+        ) {
+            return 'bg-purple-100 text-purple-700';
+        }
+        return 'bg-gray-100 text-gray-700';
     };
 
     return (
@@ -119,14 +113,14 @@ const ParentCard = ({ parent, onEdit, onDelete, onViewDetails }: any) => {
                 <div className="flex items-center space-x-3">
                     <div
                         className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            parent.status === 'active'
+                            parent.status === ParentStatus.ACTIVE
                                 ? 'bg-green-100'
                                 : 'bg-gray-100'
                         }`}
                     >
                         <User
                             className={`w-6 h-6 ${
-                                parent.status === 'active'
+                                parent.status === ParentStatus.ACTIVE
                                     ? 'text-green-600'
                                     : 'text-gray-400'
                             }`}
@@ -134,11 +128,9 @@ const ParentCard = ({ parent, onEdit, onDelete, onViewDetails }: any) => {
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-800">
-                            {parent.name}
+                            {parent.full_name}
                         </h3>
-                        <p className="text-sm text-gray-500">
-                            Mã PH: {parent.parentId}
-                        </p>
+                        <p className="text-sm text-gray-500">ID: {parent.id}</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -198,16 +190,10 @@ const ParentCard = ({ parent, onEdit, onDelete, onViewDetails }: any) => {
             </div>
 
             <div className="space-y-3">
-                {parent.occupation && (
+                {parent.relationship && (
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Briefcase className="w-4 h-4" />
-                        <span>{parent.occupation}</span>
-                    </div>
-                )}
-                {parent.dateOfBirth && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Calendar className="w-4 h-4" />
-                        <span>{calculateAge(parent.dateOfBirth)} tuổi</span>
+                        <User className="w-4 h-4" />
+                        <span>{getRelationshipText(parent.relationship)}</span>
                     </div>
                 )}
                 {parent.email && (
@@ -230,55 +216,21 @@ const ParentCard = ({ parent, onEdit, onDelete, onViewDetails }: any) => {
                 )}
             </div>
 
-            {parent.children && parent.children.length > 0 && (
+            {(parent.zalo_id || parent.facebook_id) && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-2 mb-2">
-                        <BookOpen className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700">
-                            Con em ({parent.children.length})
-                        </span>
-                    </div>
-                    <div className="space-y-1">
-                        {parent.children.slice(0, 2).map((child, index) => (
-                            <div
-                                key={index}
-                                className="text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded"
-                            >
-                                {child.name} - Lớp {child.class}
-                            </div>
-                        ))}
-                        {parent.children.length > 2 && (
-                            <div className="text-xs text-gray-500">
-                                và {parent.children.length - 2} con khác...
+                    <div className="space-y-2">
+                        {parent.zalo_id && (
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                <Phone className="w-4 h-4" />
+                                <span>Zalo: {parent.zalo_id}</span>
                             </div>
                         )}
-                    </div>
-                </div>
-            )}
-
-            {parent.emergencyContact && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="text-right">
-                        <p className="text-xs text-gray-500">
-                            Liên hệ khẩn cấp:
-                        </p>
-                        <p className="text-xs text-gray-600">
-                            {parent.emergencyContact}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                            {parent.emergencyPhone}
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {parent.notes && (
-                <div className="mt-3 p-2 bg-yellow-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                        <AlertCircle className="w-4 h-4 text-yellow-500" />
-                        <span className="text-xs text-yellow-700 font-medium">
-                            Có ghi chú
-                        </span>
+                        {parent.facebook_id && (
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                <User className="w-4 h-4" />
+                                <span>Facebook: {parent.facebook_id}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -287,100 +239,26 @@ const ParentCard = ({ parent, onEdit, onDelete, onViewDetails }: any) => {
 };
 
 export default function ParentManagement() {
-    const [parents, setParents] = useState<Parent[]>([
-        {
-            id: '1',
-            parentId: 'PH2024001',
-            name: 'Nguyễn Văn Bình',
-            email: 'binh.nguyen@gmail.com',
-            phone: '0987654321',
-            dateOfBirth: '1980-03-15',
-            address: '123 Đường Láng, Đống Đa, Hà Nội',
-            occupation: 'Kỹ sư IT',
-            workAddress: 'Tòa nhà FPT, Cầu Giấy, Hà Nội',
-            workPhone: '024-38765432',
-            relationship: 'father',
-            emergencyContact: 'Nguyễn Thị Lan',
-            emergencyPhone: '0912345678',
-            status: 'active',
-            children: [
-                { studentId: 'HS2024001', name: 'Nguyễn Văn An', class: '3A' },
-            ],
-            notes: 'Phụ huynh tích cực tham gia các hoạt động của trường',
-        },
-        {
-            id: '2',
-            parentId: 'PH2024002',
-            name: 'Trần Thị Mai',
-            email: 'mai.tran@gmail.com',
-            phone: '0909123456',
-            dateOfBirth: '1985-07-20',
-            address: '456 Giải Phóng, Hai Bà Trưng, Hà Nội',
-            occupation: 'Giáo viên',
-            workAddress: 'Trường THCS Chu Văn An',
-            workPhone: '024-38123456',
-            relationship: 'mother',
-            emergencyContact: 'Trần Văn Cường',
-            emergencyPhone: '0923456789',
-            status: 'active',
-            children: [
-                { studentId: 'HS2024002', name: 'Trần Thị Bích', class: '4B' },
-            ],
-            notes: '',
-        },
-        {
-            id: '3',
-            parentId: 'PH2024003',
-            name: 'Lê Thị Hoa',
-            email: 'hoa.le@gmail.com',
-            phone: '0888777666',
-            dateOfBirth: '1978-11-10',
-            address: '789 Cầu Giấy, Cầu Giấy, Hà Nội',
-            occupation: 'Bác sĩ',
-            workAddress: 'Bệnh viện Đại học Y Hà Nội',
-            workPhone: '024-38521479',
-            relationship: 'mother',
-            emergencyContact: 'Lê Văn Minh',
-            emergencyPhone: '0934567890',
-            status: 'active',
-            children: [
-                { studentId: 'HS2024003', name: 'Lê Minh Đức', class: '5A' },
-            ],
-            notes: 'Bác sĩ, có thể hỗ trợ tư vấn y tế cho trường',
-        },
-        {
-            id: '4',
-            parentId: 'PH2024004',
-            name: 'Phạm Văn Minh',
-            email: 'minh.pham@gmail.com',
-            phone: '0777888999',
-            dateOfBirth: '1975-01-25',
-            address: '321 Hoàng Hoa Thám, Ba Đình, Hà Nội',
-            occupation: 'Doanh nhân',
-            workAddress: 'Tòa nhà Keangnam, Mỹ Đình, Hà Nội',
-            workPhone: '024-37654321',
-            relationship: 'father',
-            emergencyContact: 'Phạm Thị Lan',
-            emergencyPhone: '0945678901',
-            status: 'active',
-            children: [
-                { studentId: 'HS2023015', name: 'Phạm Thị Lan', class: '6A' },
-            ],
-            notes: 'Thường xuyên ủng hộ các hoạt động từ thiện của trường',
-        },
-    ]);
+    const { parents, loading, getAllParents, deleteParent } = useParentStore();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRelationship, setFilterRelationship] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    // Fetch parents when component mounts
+    useEffect(() => {
+        getAllParents();
+    }, [getAllParents]);
 
     const handleEdit = (parent: Parent) => {
         console.log('Edit parent:', parent);
+        // Note: Edit functionality disabled per requirements, but API/store still supports it
     };
 
     const handleDelete = (parentId: string) => {
-        setParents(parents.filter((p) => p.id !== parentId));
+        if (window.confirm('Bạn có chắc chắn muốn xóa phụ huynh này?')) {
+            deleteParent(parentId);
+        }
     };
 
     const handleViewDetails = (parent: Parent) => {
@@ -389,27 +267,49 @@ export default function ParentManagement() {
 
     const filteredParents = parents.filter((parent) => {
         const matchesSearch =
-            parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            parent.parentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            parent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            parent.phone.includes(searchTerm);
+            parent.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            parent.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (parent.email &&
+                parent.email
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase())) ||
+            (parent.phone && parent.phone.includes(searchTerm));
+
         const matchesRelationship =
             filterRelationship === 'all' ||
-            parent.relationship === filterRelationship;
+            (parent.relationship &&
+                parent.relationship.toLowerCase().includes(filterRelationship));
+
         const matchesStatus =
-            filterStatus === 'all' || parent.status === filterStatus;
+            filterStatus === 'all' ||
+            (filterStatus === 'active' &&
+                parent.status === ParentStatus.ACTIVE) ||
+            (filterStatus === 'inactive' &&
+                parent.status === ParentStatus.INACTIVE);
 
         return matchesSearch && matchesRelationship && matchesStatus;
     });
 
     const stats = {
         total: parents.length,
-        active: parents.filter((p) => p.status === 'active').length,
-        inactive: parents.filter((p) => p.status === 'inactive').length,
-        fathers: parents.filter((p) => p.relationship === 'father').length,
-        mothers: parents.filter((p) => p.relationship === 'mother').length,
-        guardians: parents.filter((p) => p.relationship === 'guardian').length,
-        totalChildren: parents.reduce((sum, p) => sum + p.children.length, 0),
+        active: parents.filter((p) => p.status === ParentStatus.ACTIVE).length,
+        inactive: parents.filter((p) => p.status === ParentStatus.INACTIVE)
+            .length,
+        fathers: parents.filter(
+            (p) =>
+                p.relationship &&
+                p.relationship.toLowerCase().includes('father')
+        ).length,
+        mothers: parents.filter(
+            (p) =>
+                p.relationship &&
+                p.relationship.toLowerCase().includes('mother')
+        ).length,
+        guardians: parents.filter(
+            (p) =>
+                p.relationship &&
+                p.relationship.toLowerCase().includes('guardian')
+        ).length,
     };
 
     return (
@@ -513,14 +413,14 @@ export default function ParentManagement() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">
-                                    Tổng học sinh
+                                    Không hoạt động
                                 </p>
-                                <p className="text-2xl font-bold text-indigo-600">
-                                    {stats.totalChildren}
+                                <p className="text-2xl font-bold text-red-600">
+                                    {stats.inactive}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                <GraduationCap className="w-6 h-6 text-indigo-600" />
+                            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <AlertCircle className="w-6 h-6 text-red-600" />
                             </div>
                         </div>
                     </div>
@@ -577,7 +477,16 @@ export default function ParentManagement() {
                 </div>
 
                 {/* Parents Grid */}
-                {filteredParents.length > 0 ? (
+                {loading ? (
+                    <div className="bg-white rounded-xl p-12 shadow-sm text-center">
+                        <div className="flex justify-center items-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                            <span className="ml-2 text-gray-600">
+                                Đang tải dữ liệu...
+                            </span>
+                        </div>
+                    </div>
+                ) : filteredParents.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredParents.map((parent) => (
                             <ParentCard
@@ -601,7 +510,11 @@ export default function ParentManagement() {
                             </p>
                             <div className="mt-6">
                                 <button
-                                    onClick={() => setIsCreateModalOpen(true)}
+                                    onClick={() =>
+                                        console.log(
+                                            'Create parent feature not implemented'
+                                        )
+                                    }
                                     className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                                 >
                                     <Plus className="-ml-1 mr-2 h-5 w-5" />

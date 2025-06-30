@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     Home,
-    BarChart3,
+    CalendarCheck,
     GraduationCap,
     User,
     Users,
@@ -56,18 +56,7 @@ export default function SidebarAdmin() {
             color: 'text-teal-400',
             path: '/admin',
         },
-        {
-            name: 'Quản Lý Giáo Viên',
-            icon: User,
-            color: 'text-teal-400',
-            path: '/admin/teacher-management',
-        },
-        {
-            name: 'Quản Lý Phụ Huynh',
-            icon: Users,
-            color: 'text-teal-400',
-            path: '/admin/parent-management',
-        },
+
         {
             name: 'Quản Lý Học Vụ',
             icon: GraduationCap,
@@ -79,6 +68,24 @@ export default function SidebarAdmin() {
             icon: School,
             color: 'text-teal-400',
             path: '/admin/class-management',
+        },
+        {
+            name: 'Quản Lý Lịch Học',
+            icon: CalendarCheck,
+            color: 'text-teal-400',
+            path: '/admin/schedule-management',
+        },
+        {
+            name: 'Quản Lý Giáo Viên',
+            icon: User,
+            color: 'text-teal-400',
+            path: '/admin/teacher-management',
+        },
+        {
+            name: 'Quản Lý Phụ Huynh',
+            icon: Users,
+            color: 'text-teal-400',
+            path: '/admin/parent-management',
         },
         {
             name: 'Quản Lý Học Sinh',

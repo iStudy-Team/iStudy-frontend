@@ -11,7 +11,10 @@ export type Grade = {
     academic_year?: Academic;
 };
 
-export type GradeCredentials = Pick<Grade, 'name' | 'description' | 'academic_year_id'>;
+export type GradeCredentials = Pick<
+    Grade,
+    'name' | 'description' | 'academic_year_id'
+>;
 
 export type UpdateGradeCredentials = Pick<Grade, 'name' | 'description'>;
 
@@ -22,12 +25,17 @@ export type GradeResponse = {
     totalCount: number;
 };
 
-export const createGradeApi = async (credentials: GradeCredentials): Promise<Grade> => {
+export const createGradeApi = async (
+    credentials: GradeCredentials
+): Promise<Grade> => {
     const response = await api.post('api/v1/grade-level', credentials);
     return response.data;
 };
 
-export const getAllGradesApi = async (page?: number, limit?: number): Promise<GradeResponse> => {
+export const getAllGradesApi = async (
+    page?: number,
+    limit?: number
+): Promise<GradeResponse> => {
     const response = await api.get('api/v1/grade-level', {
         params: {
             page: page || 1,
@@ -37,7 +45,10 @@ export const getAllGradesApi = async (page?: number, limit?: number): Promise<Gr
     return response.data;
 };
 
-export const updateGradeApi = async (id: string, credentials: UpdateGradeCredentials): Promise<Grade> => {
+export const updateGradeApi = async (
+    id: string,
+    credentials: UpdateGradeCredentials
+): Promise<Grade> => {
     const response = await api.put(`api/v1/grade-level/${id}`, credentials);
     return response.data;
 };

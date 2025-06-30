@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     DollarSign,
-    Percent,
     User,
     Save,
     X,
@@ -9,32 +8,28 @@ import {
     Calendar,
     Download,
     Filter,
+    Plus,
 } from 'lucide-react';
+import { useInvoiceStore } from '@/store/useInvoiceStore';
+import { useStudentStore } from '@/store/useStudentStore';
+import { useClassStore } from '@/store/useClassStore';
+import { DialogInvoice } from '@/components/dialogInvoice';
+import { Invoice } from '@/api/invoice';
+
+// Extended interface for display purposes
+interface InvoiceWithStudentClass extends Invoice {
+    student_name?: string;
+    class_name?: string;
+}
 
 const FeeManage = () => {
-    // State cho quản lý học phí
-    const [students, setStudents] = useState([
-        {
-            id: 'HS001',
-            name: 'Nguyễn Văn A',
-            className: '6A',
-            baseFee: 500000,
-            discount: 0,
-            finalFee: 500000,
-            note: '',
-        },
-        {
-            id: 'HS002',
-            name: 'Trần Thị B',
-            className: '6A',
-            baseFee: 500000,
-            discount: 10,
-            finalFee: 450000,
-            note: 'Giảm 10% cho con cán bộ',
-        },
-    ]);
+    const { invoices, getAllInvoices, updateInvoice, getFinancialSummary } =
+        useInvoiceStore();
 
-    const [editingStudent, setEditingStudent] = useState(null);
+    const { students, getAllStudents } = useStudentStore();
+    const { classes, getAllClasses } = useClassStore();
+
+    const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
     // State cho thống kê tài chính
     const [timeRange, setTimeRange] = useState('month');
@@ -42,8 +37,35 @@ const FeeManage = () => {
     const [endDate, setEndDate] = useState(new Date());
     const [activeTab, setActiveTab] = useState('feeManagement'); // 'feeManagement' hoặc 'financeStats'
 
+    // Fetch data on component mount
+    useEffect(() => {
+        getAllStudents();
+        getAllClasses();
+        getAllInvoices();
+    }, [getAllStudents, getAllClasses, getAllInvoices]);
+
+    // Create extended invoices with student and class information
+    const invoicesWithDetails: InvoiceWithStudentClass[] = (invoices || []).map(
+        (invoice) => {
+            const student = (students || []).find(
+                (s) => s.id === invoice.student_id
+            );
+            const classInfo = (classes || []).find(
+                (c) => c.id === invoice.class_id
+            );
+            return {
+                ...invoice,
+                student_name: student?.full_name,
+                class_name: classInfo?.name,
+            };
+        }
+    );
+
+    // Get financial summary
+    const financialSummary = getFinancialSummary();
+
     // Format date thành chuỗi YYYY-MM-DD để sử dụng với input type="date"
-    const formatDateForInput = (date) => {
+    const formatDateForInput = (date: Date) => {
         const d = new Date(date);
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -52,7 +74,7 @@ const FeeManage = () => {
     };
 
     // Xử lý thay đổi ngày từ input type="date"
-    const handleDateChange = (dateString, isStartDate) => {
+    const handleDateChange = (dateString: string, isStartDate: boolean) => {
         const date = new Date(dateString);
         if (isStartDate) {
             setStartDate(date);
@@ -61,52 +83,25 @@ const FeeManage = () => {
         }
     };
 
-    // Dữ liệu thống kê mẫu
-    const financialData = {
-        expectedIncome: students.reduce((sum, s) => sum + s.baseFee, 0),
-        actualIncome: students.reduce((sum, s) => sum + s.finalFee, 0),
-        paidToTeachers: Math.round(
-            students.reduce((sum, s) => sum + s.finalFee, 0) * 0.7
-        ),
-        outstandingBalance: students.reduce(
-            (sum, s) => sum + (s.baseFee - s.finalFee),
-            0
-        ),
-        paymentDetails: students.map((student) => ({
-            studentId: student.id,
-            studentName: student.name,
-            className: student.className,
-            expected: student.baseFee,
-            paid: student.finalFee,
-            remaining: student.baseFee - student.finalFee,
-            lastPayment: new Date().toLocaleDateString('vi-VN'),
-        })),
-    };
-
     // Xử lý thay đổi giảm giá
-    const handleDiscountChange = (id, value) => {
-        const numericValue = Math.min(100, Math.max(0, parseInt(value) || 0));
-
-        setStudents((prev) =>
-            prev.map((student) => {
-                if (student.id === id) {
-                    const finalFee = Math.round(
-                        (student.baseFee * (100 - numericValue)) / 100
-                    );
-                    return {
-                        ...student,
-                        discount: numericValue,
-                        finalFee,
-                        note: numericValue > 0 ? `Giảm ${numericValue}%` : '',
-                    };
-                }
-                return student;
-            })
-        );
+    const handleDiscountChange = async (
+        invoiceId: string,
+        discountAmount: number
+    ) => {
+        const invoice = invoices.find((inv) => inv.id === invoiceId);
+        if (invoice) {
+            const finalAmount = invoice.amount - discountAmount;
+            await updateInvoice(invoiceId, {
+                discount_amount: discountAmount,
+                final_amount: Math.max(0, finalAmount),
+            });
+            // Refresh data
+            getAllInvoices();
+        }
     };
 
     // Xử lý thay đổi bộ lọc thời gian
-    const handleTimeRangeChange = (range) => {
+    const handleTimeRangeChange = (range: string) => {
         setTimeRange(range);
         const now = new Date();
         if (range === 'month') {
@@ -120,6 +115,11 @@ const FeeManage = () => {
             setStartDate(new Date(now.getFullYear(), 0, 1));
             setEndDate(now);
         }
+    };
+
+    const handleDialogSuccess = () => {
+        getAllInvoices();
+        setEditingInvoice(null);
     };
 
     return (
@@ -143,10 +143,19 @@ const FeeManage = () => {
             {/* Giao diện quản lý học phí */}
             {activeTab === 'feeManagement' && (
                 <div>
-                    <h1 className="text-2xl font-bold mb-6 flex items-center">
-                        <DollarSign className="w-6 h-6 mr-2 text-green-600" />
-                        Quản lý học phí
-                    </h1>
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-2xl font-bold flex items-center">
+                            <DollarSign className="w-6 h-6 mr-2 text-green-600" />
+                            Quản lý học phí
+                        </h1>
+
+                        <DialogInvoice onSuccess={handleDialogSuccess}>
+                            <button className="flex items-center space-x-2 bg-teal-400 text-white px-6 py-2 rounded-lg hover:bg-teal-500 transition-colors cursor-pointer">
+                                <Plus className="w-5 h-5" />
+                                <span>Tạo Hóa Đơn Mới</span>
+                            </button>
+                        </DialogInvoice>
+                    </div>
 
                     <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -159,6 +168,9 @@ const FeeManage = () => {
                                         Lớp
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Tháng/Năm
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                         Học phí gốc
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -168,7 +180,7 @@ const FeeManage = () => {
                                         Thực thu
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Ghi chú
+                                        Trạng thái
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                         Thao tác
@@ -176,86 +188,98 @@ const FeeManage = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {students.map((student) => (
-                                    <tr key={student.id}>
+                                {invoicesWithDetails.map((invoice) => (
+                                    <tr key={invoice.id}>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <User className="w-5 h-5 text-blue-600 mr-2" />
-                                                <span>{student.name}</span>
+                                                <span>
+                                                    {invoice.student_name ||
+                                                        'N/A'}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {student.className}
+                                            {invoice.class_name || 'N/A'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {student.baseFee.toLocaleString(
+                                            {invoice.month}/{invoice.year}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {invoice.amount.toLocaleString(
                                                 'vi-VN'
                                             )}
                                             ₫
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {editingStudent === student.id ? (
+                                            {editingInvoice?.id ===
+                                            invoice.id ? (
                                                 <div className="flex items-center">
                                                     <input
                                                         type="number"
-                                                        value={student.discount}
+                                                        value={
+                                                            invoice.discount_amount ||
+                                                            0
+                                                        }
                                                         onChange={(e) =>
                                                             handleDiscountChange(
-                                                                student.id,
-                                                                e.target.value
+                                                                invoice.id,
+                                                                parseFloat(
+                                                                    e.target
+                                                                        .value
+                                                                ) || 0
                                                             )
                                                         }
                                                         className="w-20 px-2 py-1 border border-gray-300 rounded mr-2"
                                                         min="0"
-                                                        max="100"
                                                     />
-                                                    <Percent className="w-4 h-4 text-gray-500" />
+                                                    <span className="text-sm">
+                                                        ₫
+                                                    </span>
                                                 </div>
                                             ) : (
-                                                `${student.discount}%`
+                                                `${(invoice.discount_amount || 0).toLocaleString('vi-VN')}₫`
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap font-medium text-green-600">
-                                            {student.finalFee.toLocaleString(
-                                                'vi-VN'
-                                            )}
+                                            {(
+                                                invoice.final_amount ||
+                                                invoice.amount
+                                            ).toLocaleString('vi-VN')}
                                             ₫
                                         </td>
-                                        <td className="px-6 py-4">
-                                            {editingStudent === student.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={student.note}
-                                                    onChange={(e) =>
-                                                        setStudents((prev) =>
-                                                            prev.map((s) =>
-                                                                s.id ===
-                                                                student.id
-                                                                    ? {
-                                                                          ...s,
-                                                                          note: e
-                                                                              .target
-                                                                              .value,
-                                                                      }
-                                                                    : s
-                                                            )
-                                                        )
-                                                    }
-                                                    className="w-full px-2 py-1 border border-gray-300 rounded"
-                                                    placeholder="Lý do giảm giá"
-                                                />
-                                            ) : (
-                                                <span className="text-sm text-gray-600">
-                                                    {student.note}
-                                                </span>
-                                            )}
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                    invoice.status === 'PAID'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : invoice.status ===
+                                                            'OVERDUE'
+                                                          ? 'bg-red-100 text-red-700'
+                                                          : invoice.status ===
+                                                              'CANCELLED'
+                                                            ? 'bg-gray-100 text-gray-700'
+                                                            : 'bg-yellow-100 text-yellow-700'
+                                                }`}
+                                            >
+                                                {invoice.status === 'PAID'
+                                                    ? 'Đã thanh toán'
+                                                    : invoice.status ===
+                                                        'OVERDUE'
+                                                      ? 'Quá hạn'
+                                                      : invoice.status ===
+                                                          'CANCELLED'
+                                                        ? 'Đã hủy'
+                                                        : 'Chờ thanh toán'}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {editingStudent === student.id ? (
+                                            {editingInvoice?.id ===
+                                            invoice.id ? (
                                                 <div className="flex space-x-2">
                                                     <button
                                                         onClick={() =>
-                                                            setEditingStudent(
+                                                            setEditingInvoice(
                                                                 null
                                                             )
                                                         }
@@ -265,7 +289,7 @@ const FeeManage = () => {
                                                     </button>
                                                     <button
                                                         onClick={() =>
-                                                            setEditingStudent(
+                                                            setEditingInvoice(
                                                                 null
                                                             )
                                                         }
@@ -277,8 +301,8 @@ const FeeManage = () => {
                                             ) : (
                                                 <button
                                                     onClick={() =>
-                                                        setEditingStudent(
-                                                            student.id
+                                                        setEditingInvoice(
+                                                            invoice
                                                         )
                                                     }
                                                     className="text-blue-600 hover:text-blue-800"
@@ -300,9 +324,9 @@ const FeeManage = () => {
                                 Tổng học phí gốc
                             </h3>
                             <p className="text-2xl font-bold">
-                                {students
-                                    .reduce((sum, s) => sum + s.baseFee, 0)
-                                    .toLocaleString('vi-VN')}
+                                {financialSummary.expectedIncome.toLocaleString(
+                                    'vi-VN'
+                                )}
                                 ₫
                             </p>
                         </div>
@@ -311,13 +335,9 @@ const FeeManage = () => {
                                 Tổng giảm giá
                             </h3>
                             <p className="text-2xl font-bold text-red-600">
-                                {students
-                                    .reduce(
-                                        (sum, s) =>
-                                            sum + (s.baseFee - s.finalFee),
-                                        0
-                                    )
-                                    .toLocaleString('vi-VN')}
+                                {financialSummary.totalDiscount.toLocaleString(
+                                    'vi-VN'
+                                )}
                                 ₫
                             </p>
                         </div>
@@ -326,9 +346,9 @@ const FeeManage = () => {
                                 Tổng thực thu
                             </h3>
                             <p className="text-2xl font-bold text-green-600">
-                                {students
-                                    .reduce((sum, s) => sum + s.finalFee, 0)
-                                    .toLocaleString('vi-VN')}
+                                {financialSummary.actualIncome.toLocaleString(
+                                    'vi-VN'
+                                )}
                                 ₫
                             </p>
                         </div>
@@ -432,7 +452,7 @@ const FeeManage = () => {
                                 Dự kiến thu
                             </div>
                             <div className="text-2xl font-bold text-blue-600">
-                                {financialData.expectedIncome.toLocaleString(
+                                {financialSummary.expectedIncome.toLocaleString(
                                     'vi-VN'
                                 )}
                                 ₫
@@ -447,15 +467,15 @@ const FeeManage = () => {
                                 Đã thu
                             </div>
                             <div className="text-2xl font-bold text-green-600">
-                                {financialData.actualIncome.toLocaleString(
+                                {financialSummary.actualIncome.toLocaleString(
                                     'vi-VN'
                                 )}
                                 ₫
                             </div>
                             <div className="text-xs text-gray-500 mt-2">
                                 {(
-                                    (financialData.actualIncome /
-                                        financialData.expectedIncome) *
+                                    (financialSummary.actualIncome /
+                                        financialSummary.expectedIncome) *
                                         100 || 0
                                 ).toFixed(1)}
                                 % so với dự kiến
@@ -467,18 +487,13 @@ const FeeManage = () => {
                                 Đã trả giáo viên
                             </div>
                             <div className="text-2xl font-bold text-purple-600">
-                                {financialData.paidToTeachers.toLocaleString(
-                                    'vi-VN'
-                                )}
+                                {Math.round(
+                                    financialSummary.actualIncome * 0.7
+                                ).toLocaleString('vi-VN')}
                                 ₫
                             </div>
                             <div className="text-xs text-gray-500 mt-2">
-                                {(
-                                    (financialData.paidToTeachers /
-                                        financialData.actualIncome) *
-                                        100 || 0
-                                ).toFixed(1)}
-                                % thu nhập
+                                70% thu nhập
                             </div>
                         </div>
 
@@ -487,7 +502,7 @@ const FeeManage = () => {
                                 Còn lại
                             </div>
                             <div className="text-2xl font-bold text-red-600">
-                                {financialData.outstandingBalance.toLocaleString(
+                                {financialSummary.outstandingBalance.toLocaleString(
                                     'vi-VN'
                                 )}
                                 ₫
@@ -529,6 +544,9 @@ const FeeManage = () => {
                                                 Lớp
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Tháng/Năm
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                 Dự kiến
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -538,7 +556,7 @@ const FeeManage = () => {
                                                 Còn lại
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Lần đóng cuối
+                                                Trạng thái
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                                 Tỷ lệ
@@ -546,65 +564,99 @@ const FeeManage = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {financialData.paymentDetails.map(
-                                            (student, index) => (
-                                                <tr key={index}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="font-medium">
-                                                            {
-                                                                student.studentName
-                                                            }
-                                                        </div>
-                                                        <div className="text-sm text-gray-500">
-                                                            {student.studentId}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {student.className}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {student.expected.toLocaleString(
-                                                            'vi-VN'
-                                                        )}
-                                                        ₫
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-green-600">
-                                                        {student.paid.toLocaleString(
-                                                            'vi-VN'
-                                                        )}
-                                                        ₫
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-red-600">
-                                                        {student.remaining.toLocaleString(
-                                                            'vi-VN'
-                                                        )}
-                                                        ₫
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {student.lastPayment ||
-                                                            'Chưa đóng'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="w-full bg-gray-200 rounded-full h-2">
-                                                            <div
-                                                                className="bg-blue-600 h-2 rounded-full"
-                                                                style={{
-                                                                    width: `${(student.paid / student.expected) * 100}%`,
-                                                                }}
-                                                            ></div>
-                                                        </div>
-                                                        <div className="text-xs text-right mt-1">
-                                                            {(
-                                                                (student.paid /
-                                                                    student.expected) *
-                                                                    100 || 0
-                                                            ).toFixed(1)}
-                                                            %
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        )}
+                                        {invoicesWithDetails.map((invoice) => (
+                                            <tr key={invoice.id}>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="font-medium">
+                                                        {invoice.student_name ||
+                                                            'N/A'}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {invoice.student_id}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {invoice.class_name ||
+                                                        'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {invoice.month}/
+                                                    {invoice.year}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {invoice.amount.toLocaleString(
+                                                        'vi-VN'
+                                                    )}
+                                                    ₫
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-green-600">
+                                                    {invoice.status === 'PAID'
+                                                        ? (
+                                                              invoice.final_amount ||
+                                                              invoice.amount
+                                                          ).toLocaleString(
+                                                              'vi-VN'
+                                                          )
+                                                        : '0'}
+                                                    ₫
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-red-600">
+                                                    {invoice.status !== 'PAID'
+                                                        ? (
+                                                              invoice.final_amount ||
+                                                              invoice.amount
+                                                          ).toLocaleString(
+                                                              'vi-VN'
+                                                          )
+                                                        : '0'}
+                                                    ₫
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span
+                                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                            invoice.status ===
+                                                            'PAID'
+                                                                ? 'bg-green-100 text-green-700'
+                                                                : invoice.status ===
+                                                                    'OVERDUE'
+                                                                  ? 'bg-red-100 text-red-700'
+                                                                  : invoice.status ===
+                                                                      'CANCELLED'
+                                                                    ? 'bg-gray-100 text-gray-700'
+                                                                    : 'bg-yellow-100 text-yellow-700'
+                                                        }`}
+                                                    >
+                                                        {invoice.status ===
+                                                        'PAID'
+                                                            ? 'Đã thanh toán'
+                                                            : invoice.status ===
+                                                                'OVERDUE'
+                                                              ? 'Quá hạn'
+                                                              : invoice.status ===
+                                                                  'CANCELLED'
+                                                                ? 'Đã hủy'
+                                                                : 'Chờ thanh toán'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                                        <div
+                                                            className="bg-blue-600 h-2 rounded-full"
+                                                            style={{
+                                                                width: `${invoice.status === 'PAID' ? 100 : 0}%`,
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                    <div className="text-xs text-right mt-1">
+                                                        {invoice.status ===
+                                                        'PAID'
+                                                            ? 100
+                                                            : 0}
+                                                        %
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
