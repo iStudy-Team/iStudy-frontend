@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Search,
     MoreVertical,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useTeacherStore } from '@/store/useTeacherStore';
 import { Teacher, TeacherGender, TeacherStatus } from '@/api/teacher';
+import { DialogTeacherDetails } from '@/components/dialogTeacherDetails';
 
 const TeacherCard = ({
     teacher,
@@ -184,6 +185,9 @@ export default function TeacherManagement() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterGender, setFilterGender] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [viewingTeacher, setViewingTeacher] = useState<Teacher | null>(null);
+    const [showTeacherDetailsDialog, setShowTeacherDetailsDialog] =
+        useState(false);
 
     // Fetch teachers on component mount
     useEffect(() => {
@@ -199,7 +203,8 @@ export default function TeacherManagement() {
     };
 
     const handleViewDetails = (teacher: Teacher) => {
-        console.log('View teacher details:', teacher);
+        setViewingTeacher(teacher);
+        setShowTeacherDetailsDialog(true);
     };
 
     const filteredTeachers = teachers.filter((teacher) => {
@@ -436,6 +441,16 @@ export default function TeacherManagement() {
                     </div>
                 )}
             </div>
+
+            {/* Teacher Details Dialog */}
+            <DialogTeacherDetails
+                isOpen={showTeacherDetailsDialog}
+                onClose={() => {
+                    setShowTeacherDetailsDialog(false);
+                    setViewingTeacher(null);
+                }}
+                teacher={viewingTeacher}
+            />
         </div>
     );
 }
