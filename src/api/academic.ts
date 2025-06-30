@@ -1,5 +1,7 @@
 import { api } from './api.ts';
 import { ACADEMIC_YEAR_STATUS } from '@/types/study.ts';
+import { Grade } from './grade.ts';
+import { Class } from './class.ts';
 
 export type Academic = {
     id: string;
@@ -9,6 +11,8 @@ export type Academic = {
     status: ACADEMIC_YEAR_STATUS;
     created_at: string;
     updated_at: string;
+    grade_levels?: Grade[];
+    classes?: Class[];
 };
 
 export type AcademicYearCredentials = Pick<

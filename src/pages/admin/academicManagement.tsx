@@ -20,6 +20,8 @@ import { DevPagination } from '@/components/atoms/pagination';
 import { GradeCard } from '@/components/molecules/admin.grade.card';
 import { useGradeStore } from '@/store/useGradeStore';
 import { confirm } from '@/composables/onConfirm';
+import { DialogAcademicDetails } from '@/components/dialogAcademicDetails';
+import { DialogGradeDetails } from '@/components/dialogGradeDetails';
 
 // Main Component
 export default function CourseGradeManagement() {
@@ -27,8 +29,15 @@ export default function CourseGradeManagement() {
     const [searchTerm, setSearchTerm] = useState('');
     const [showCourseModal, setShowCourseModal] = useState(false);
     const [showGradeModal, setShowGradeModal] = useState(false);
+    const [showAcademicDetailsDialog, setShowAcademicDetailsDialog] =
+        useState(false);
+    const [showGradeDetailsDialog, setShowGradeDetailsDialog] = useState(false);
     const [currentCourse, setCurrentCourse] = useState<Academic | null>(null);
     const [currentGrade, setCurrentGrade] = useState<Grade | null>(null);
+    const [selectedAcademicForDetails, setSelectedAcademicForDetails] =
+        useState<Academic | null>(null);
+    const [selectedGradeForDetails, setSelectedGradeForDetails] =
+        useState<Grade | null>(null);
     const { academicYears, getAllAcademicYears } = useAcademicStore();
     const { grades, fetchGrades, deleteGrade } = useGradeStore();
 
@@ -77,8 +86,8 @@ export default function CourseGradeManagement() {
     };
 
     const handleViewCourseDetails = (Academic: Academic) => {
-        // In a real app, you might navigate to a details page
-        alert(`Xem chi tiết khóa học: ${Academic.school_year}`);
+        setSelectedAcademicForDetails(Academic);
+        setShowAcademicDetailsDialog(true);
     };
 
     const handleEditGrade = (Grade: Grade) => {
@@ -87,8 +96,8 @@ export default function CourseGradeManagement() {
     };
 
     const handleViewGradeDetails = (Grade: Grade) => {
-        // In a real app, you might navigate to a details page
-        alert(`Xem chi tiết khối: ${Grade.name}`);
+        setSelectedGradeForDetails(Grade);
+        setShowGradeDetailsDialog(true);
     };
 
     const handleDeleteGrade = async (gradeId: string) => {
@@ -416,6 +425,25 @@ export default function CourseGradeManagement() {
                     limit={limit}
                 />
             </div>
+
+            {/* Dialog Components */}
+            <DialogAcademicDetails
+                isOpen={showAcademicDetailsDialog}
+                onClose={() => {
+                    setShowAcademicDetailsDialog(false);
+                    setSelectedAcademicForDetails(null);
+                }}
+                academic={selectedAcademicForDetails}
+            />
+
+            <DialogGradeDetails
+                isOpen={showGradeDetailsDialog}
+                onClose={() => {
+                    setShowGradeDetailsDialog(false);
+                    setSelectedGradeForDetails(null);
+                }}
+                grade={selectedGradeForDetails}
+            />
         </div>
     );
 }

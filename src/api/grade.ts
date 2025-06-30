@@ -1,14 +1,16 @@
 import { api } from './api.ts';
 import { Academic } from './academic.ts';
+import { Class } from './class.ts';
 
 export type Grade = {
     id: string;
     name: string;
     description?: string;
     academic_year_id: string;
-    created_at: Date;
-    updated_at: Date;
+    created_at: string | Date;
+    updated_at: string | Date;
     academic_year?: Academic;
+    classes?: Class[];
 };
 
 export type GradeCredentials = Pick<

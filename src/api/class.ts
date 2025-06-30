@@ -13,11 +13,11 @@ export interface Class {
     name: string;
     capacity?: number;
     tuition_fee?: string;
-    start_date?: Date;
-    end_date?: Date;
+    start_date?: string | Date | null;
+    end_date?: string | Date | null;
     status: ClassStatus;
-    created_at: Date;
-    updated_at: Date;
+    created_at: string | Date;
+    updated_at: string | Date;
 }
 
 export type ClassCredentials = Pick<
@@ -46,8 +46,8 @@ export interface SearchClassDto {
 export async function createClassApi(dto: ClassCredentials): Promise<Class> {
     const payload = {
         ...dto,
-        start_date: dto.start_date?.toISOString(),
-        end_date: dto.end_date?.toISOString(),
+        start_date: dto.start_date instanceof Date ? dto.start_date.toISOString() : dto.start_date,
+        end_date: dto.end_date instanceof Date ? dto.end_date.toISOString() : dto.end_date,
         teacher_id: dto.teacher_id
     };
     const response = await api.post('api/v1/class', payload);
@@ -61,8 +61,8 @@ export async function updateClassApi(
 ): Promise<Class> {
     const payload = {
         ...dto,
-        start_date: dto.start_date?.toISOString(),
-        end_date: dto.end_date?.toISOString(),
+        start_date: dto.start_date instanceof Date ? dto.start_date.toISOString() : dto.start_date,
+        end_date: dto.end_date instanceof Date ? dto.end_date.toISOString() : dto.end_date,
     };
     const response = await api.put(`api/v1/class/${id}`, payload);
     return response.data;
