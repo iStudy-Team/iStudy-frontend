@@ -6,8 +6,18 @@ import { clientRoute } from '@/routes/client';
 import { rootRoute } from '@/routes/__root.tsx';
 import { authRoute } from './routes/auth';
 import { admintRoute } from './routes/admin';
+import { teacherRoute } from './routes/teacher';
+import { parentRoute } from './routes/parent';
+import { studentRoute } from './routes/student';
 
-const routeTree = rootRoute.addChildren([clientRoute, authRoute, admintRoute]);
+const routeTree = rootRoute.addChildren([
+    clientRoute,
+    authRoute,
+    admintRoute,
+    teacherRoute,
+    parentRoute,
+    studentRoute,
+]);
 
 declare module '@tanstack/react-router' {
     interface Register {

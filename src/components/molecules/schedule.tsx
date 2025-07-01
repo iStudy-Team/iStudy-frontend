@@ -1,37 +1,43 @@
-import { Scheduler } from '@aldabil/react-scheduler';
+import { createEventModalPlugin } from '@schedule-x/event-modal';
+import { createDragAndDropPlugin } from '@schedule-x/drag-and-drop';
+import { useCalendarApp, ScheduleXCalendar } from '@schedule-x/react';
 import { vi } from 'date-fns/locale';
+import {
+    createViewDay,
+    createViewMonthAgenda,
+    createViewMonthGrid,
+    createViewWeek,
+} from '@schedule-x/calendar';
+import { createEventsServicePlugin } from '@schedule-x/events-service';
 
-interface ScheduleProps {
-    events: ProcessedEvent[];
+import '@schedule-x/theme-default/dist/index.css';
+import { useState, useEffect } from 'react';
+
+interface Event {
+    id: string;
+    title: string;
+    start: string;
+    end: string;
 }
 
-export default function Schedule({ events }: ScheduleProps) {
-    return (
-        <Scheduler
-            view="month"
-            locale={vi}
-            events={events}
-            translations={{
-                navigation: {
-                    month: 'Tháng',
-                    week: 'Tuần',
-                    day: 'Ngày',
-                    today: 'Hôm nay',
-                    agenda: 'Lịch trình',
-                },
-                form: {
-                    addTitle: 'Thêm lịch',
-                    editTitle: 'Sửa lịch',
-                    confirm: 'Xác nhận',
-                    delete: 'Xóa',
-                    cancel: 'Hủy',
-                },
-                event: {
-                    title: 'Tiêu đề',
-                    start: 'Bắt đầu',
-                    end: 'Kết thúc',
-                },
-            }}
-        />
-    );
+interface CalendarProps {
+    events: Event[];
+}
+
+export default function Schedule({ events }: CalendarProps) {
+    const eventsService = useState(() => createEventsServicePlugin())[0];
+
+    const calendar = useCalendarApp({
+        views: [
+            createViewMonthGrid(),
+            createViewMonthAgenda(),
+            createViewWeek(),
+            createViewDay(),
+        ],
+        events, // sử dụng props
+        plugins: [createEventModalPlugin(), createDragAndDropPlugin()],
+        defaultView: 'monthGrid',
+    });
+
+    return <ScheduleXCalendar calendarApp={calendar} />;
 }
