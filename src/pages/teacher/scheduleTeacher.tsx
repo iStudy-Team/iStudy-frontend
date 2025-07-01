@@ -17,7 +17,7 @@ const schedule = [
 
 export default function TeacherSchedule() {
     return (
-        <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="bg-white rounded-xl p-6 shadow-sm h-full">
             <Schedule events={schedule} />
         </div>
     );
