@@ -1,4 +1,4 @@
-import { MoreVertical, Eye, Edit3, Trash2, GraduationCap } from 'lucide-react';
+import { MoreVertical, Eye, Edit3, GraduationCap } from 'lucide-react';
 import { useState } from 'react';
 import { Grade } from '@/api/grade';
 import {
@@ -12,7 +12,6 @@ export const GradeCard = ({
     Grade,
     onEdit,
     onViewDetails,
-    onDelete,
 }: {
     Grade: Grade;
     onEdit: (Grade: Grade) => void;
@@ -32,12 +31,6 @@ export const GradeCard = ({
             label: 'Chỉnh sửa',
             icon: <Edit3 className="w-4 h-4" />,
             action: () => onEdit(Grade),
-            disabled: false,
-        },
-        {
-            label: 'Xóa khối',
-            icon: <Trash2 className="w-4 h-4 text-red-600" />,
-            action: () => onDelete(Grade.id),
             disabled: false,
         },
     ];

@@ -21,3 +21,15 @@ export interface IUser {
     updatedAt: string;
     status: USER_STATUS;
 }
+
+export type User = {
+    id: string;
+    username: string;
+    email: string;
+    phone: string;
+    role: USER_ROLE;
+    createdAt: Date;
+    updatedAt: Date;
+    status: USER_STATUS;
+    avatar?: string; // Optional field for user avatar
+}

@@ -31,12 +31,10 @@ const ClassCard = ({
     classData,
     onToggleStatus,
     onEdit,
-    onViewDetails,
 }: {
     classData: Class;
     onToggleStatus: (id: string) => void;
     onEdit: (classData: Class) => void;
-    onViewDetails: (classData: Class) => void;
 }) => {
     const [showDropdown, setShowDropdown] = useState(false);
 
@@ -66,7 +64,7 @@ const ClassCard = ({
         }
     };
 
-    const formatDate = (date?: Date) => {
+    const formatDate = (date?: string | Date) => {
         if (!date) return '';
         return new Date(date).toLocaleDateString('vi-VN');
     };
@@ -99,7 +97,7 @@ const ClassCard = ({
                         </h3>
                         <p className="text-sm text-gray-500">
                             Khối Lớp: {classData.grade_level?.name} <br />
-                            Năm Học: {classData.academic_year.school_year}
+                            Năm Học: {classData.academic_year?.school_year}
                         </p>
                     </div>
                 </div>
@@ -190,8 +188,9 @@ const ClassCard = ({
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
                     <span>
-                        {formatDate(classData.start_date)} -{' '}
-                        {formatDate(classData.end_date)}
+                        {classData?.start_date && classData?.end_date
+                            ? `${formatDate(classData.start_date)} - ${formatDate(classData.end_date)}`
+                            : 'Chưa cập nhật'}
                     </span>
                 </div>
 
@@ -237,8 +236,6 @@ export default function ClassManagementAdmin() {
         // Implement edit functionality
         console.log('Edit class:', classData);
     };
-
-    const handleViewDetails = (classData: Class) => {};
 
     const filteredClasses = classes.filter((cls) => {
         const matchesGrade =
@@ -512,7 +509,6 @@ export default function ClassManagementAdmin() {
                                 classData={classData}
                                 onToggleStatus={handleToggleStatus}
                                 onEdit={handleEdit}
-                                onViewDetails={handleViewDetails}
                             />
                         ))}
                     </div>

@@ -1,5 +1,4 @@
 import { api } from './api';
-import { Class } from './class';
 
 export interface Schedule {
     id: string;
@@ -7,7 +6,11 @@ export interface Schedule {
     day?: Date;
     start_time?: Date,
     end_time?: Date,
-    class?: Class;
+    class_name?: string;
+    teacher?: {
+        id: string;
+        full_name: string;
+    }[]
 }
 
 export type ScheduleCredentials = Pick<
@@ -57,7 +60,7 @@ export async function updateScheduleApi(id: string, dto: UpdateScheduleCredentia
 
 // Get schedule by ID
 export async function getScheduleByIdApi(id: string): Promise<Schedule> {
-    const response = await api.get(`api/v1/schedule/${id}`);
+    const response = await api.get(`api/v1/schedule/get-by-id/${id}`);
     return response.data;
 }
 
@@ -79,5 +82,11 @@ export async function getSchedulesByMultipleClassesApi(dto: GetScheduleByMultipl
         end_date: dto.end_date?.toISOString(),
     };
     const response = await api.post('api/v1/schedule/get-by-multiple-classes', payload);
+    return response.data;
+}
+
+// Get schedules by student (current authenticated user)
+export async function getSchedulesByStudentApi(): Promise<Schedule[]> {
+    const response = await api.get('api/v1/schedule/get-by-student');
     return response.data;
 }

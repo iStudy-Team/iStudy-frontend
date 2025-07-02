@@ -1,4 +1,5 @@
 import { api } from './api';
+import { User } from '@/types/user';
 
 export enum StudentGender {
     MALE = 0,
@@ -26,6 +27,7 @@ export interface Student {
     discount_reason?: string;
     created_at: Date;
     updated_at: Date;
+    user?: User; // Assuming User type is defined in types/user.ts
 }
 
 export type StudentCredentials = Pick<

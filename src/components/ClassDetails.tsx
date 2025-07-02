@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import {
     Calendar,
     Users,
@@ -15,19 +14,10 @@ import {
     Phone,
     Mail,
     Search,
-    Filter,
     Download,
-    UserCheck,
-    UserX,
-    Eye,
-    EyeOff,
     ChevronDown,
     ChevronUp,
-    ArrowLeft,
-    Edit,
-    Trash2,
     Plus,
-    MoreVertical,
 } from 'lucide-react';
 
 // Mock data cho classData và students

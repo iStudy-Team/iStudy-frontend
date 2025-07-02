@@ -1,6 +1,9 @@
 import { api } from './api';
 import { Grade } from './grade';
 import { Academic } from './academic';
+import { Student } from './student';
+import { Teacher } from './teacher';
+import { Schedule } from './schedule';
 
 export enum ClassStatus {
     OPEN = 0,
@@ -8,8 +11,72 @@ export enum ClassStatus {
     COMPLETED = 2,
 }
 
-export interface Class {
+export enum ClassEnrollmentStatus {
+    INACTIVE = 0,
+    ACTIVE = 1,
+    COMPLETED = 2,
+}
 
+export enum ClassTeacherRole {
+    MAIN_TEACHER = 0,
+    ASSISTANT_TEACHER = 1,
+}
+
+export enum ClassTeacherStatus {
+    INACTIVE = 0,
+    ACTIVE = 1,
+}
+
+// User interface for embedded user data (backend format)
+export interface ClassUser {
+    id: string;
+    username: string;
+    password: string;
+    email: string;
+    phone: string;
+    avatar?: string | null;
+    role: number;
+    created_at: string | Date;
+    updated_at: string | Date;
+    status: boolean;
+}
+
+// Enhanced Teacher interface with user data
+export interface TeacherWithUser extends Teacher {
+    user: ClassUser;
+}
+
+// Class Teacher relationship
+export interface ClassTeacher {
+    id: string;
+    class_id: string;
+    teacher_id: string;
+    role: ClassTeacherRole;
+    start_date?: string | Date | null;
+    end_date?: string | Date | null;
+    status: ClassTeacherStatus;
+    teacher: TeacherWithUser;
+}
+
+// Enhanced Student interface with user data
+export interface StudentWithUser extends Omit<Student, 'user'> {
+    user: ClassUser;
+}
+
+export interface ClassEnrollment {
+    id: string;
+    class_id: string;
+    student_id: string;
+    enrollment_date: string | Date;
+    end_date?: string | Date | null;
+    status: ClassEnrollmentStatus;
+    tuition_fee?: string | null;
+    original_fee?: string | null;
+    discount_percentage: number;
+    student: StudentWithUser;
+}
+
+export interface Class {
     id: string;
     academic_year_id: string;
     grade_level_id: string;
@@ -22,7 +89,10 @@ export interface Class {
     created_at: string | Date;
     updated_at: string | Date;
     academic_year?: Academic;
-    grade_level?:Grade;
+    grade_level?: Grade;
+    schedule?: Schedule[]; // Will be populated by getSchedulesByClassOrDay
+    class_teachers?: ClassTeacher[];
+    class_enrollments?: ClassEnrollment[];
 }
 
 export type ClassCredentials = Pick<
@@ -75,6 +145,12 @@ export async function updateClassApi(
 
 // Get class by ID
 export async function getClassByIdApi(id: string): Promise<Class> {
+    const response = await api.get(`api/v1/class/get-by-id/${id}`);
+    return response.data;
+}
+
+// Get detailed class by ID (includes teachers, students, schedules)
+export async function getDetailedClassByIdApi(id: string): Promise<Class> {
     const response = await api.get(`api/v1/class/get-by-id/${id}`);
     return response.data;
 }
