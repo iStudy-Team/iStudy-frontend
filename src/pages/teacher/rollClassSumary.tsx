@@ -1,6 +1,5 @@
-import { CLASSES } from '@/constant/classes';
 import { Link, useParams } from '@tanstack/react-router';
-import { STUDENTS } from '@/constant/student';
+
 import {
     ArrowLeft,
     CheckCircle,
