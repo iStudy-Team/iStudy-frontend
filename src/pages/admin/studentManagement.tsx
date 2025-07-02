@@ -14,9 +14,11 @@ import {
     GraduationCap,
     MapPin,
     Loader2,
+    Mail,
 } from 'lucide-react';
 import { useStudentStore } from '@/store/useStudentStore';
 import { Student, StudentStatus } from '@/api/student';
+import { DialogStudentDetails } from '@/components/dialogStudentDetails';
 
 interface StudentCardProps {
     student: Student;
@@ -63,12 +65,18 @@ const StudentCard = ({
         }
     };
 
-    const calculateAge = (dateOfBirth?: Date) => {
+    const calculateAge = (dateOfBirth?: Date | string | null) => {
         if (!dateOfBirth) return 'N/A';
+
         const today = new Date();
         const birthDate = new Date(dateOfBirth);
+
+        // Check if date is valid
+        if (isNaN(birthDate.getTime())) return 'N/A';
+
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
+
         if (
             monthDiff < 0 ||
             (monthDiff === 0 && today.getDate() < birthDate.getDate())
@@ -78,36 +86,75 @@ const StudentCard = ({
         return age;
     };
 
+    const formatDate = (date?: Date | string | null) => {
+        if (!date) return 'N/A';
+        const d = new Date(date);
+        return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString('vi-VN');
+    };
+
+    const getGenderText = (gender?: number) => {
+        switch (gender) {
+            case 1:
+                return 'Nam';
+            case 2:
+                return 'Nữ';
+            case 3:
+                return 'Khác';
+            default:
+                return 'N/A';
+        }
+    };
+
+    const renderAvatar = () => {
+        if (student.user?.avatar) {
+            return (
+                <img
+                    src={student.user.avatar}
+                    alt={student.full_name}
+                    className="w-12 h-12 rounded-xl object-cover"
+                />
+            );
+        }
+
+        return (
+            <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    student.status === StudentStatus.ACTIVE
+                        ? 'bg-blue-100'
+                        : student.status === StudentStatus.GRADUATED
+                          ? 'bg-green-100'
+                          : 'bg-gray-100'
+                }`}
+            >
+                <User
+                    className={`w-6 h-6 ${
+                        student.status === StudentStatus.ACTIVE
+                            ? 'text-blue-600'
+                            : student.status === StudentStatus.GRADUATED
+                              ? 'text-green-600'
+                              : 'text-gray-400'
+                    }`}
+                />
+            </div>
+        );
+    };
+
     return (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between mb-4 max-w-full">
                 <div className="flex items-center space-x-3">
-                    <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            student.status === StudentStatus.ACTIVE
-                                ? 'bg-blue-100'
-                                : student.status === StudentStatus.GRADUATED
-                                  ? 'bg-green-100'
-                                  : 'bg-gray-100'
-                        }`}
-                    >
-                        <User
-                            className={`w-6 h-6 ${
-                                student.status === StudentStatus.ACTIVE
-                                    ? 'text-blue-600'
-                                    : student.status === StudentStatus.GRADUATED
-                                      ? 'text-green-600'
-                                      : 'text-gray-400'
-                            }`}
-                        />
-                    </div>
-                    <div>
-                        <h3 className="font-semibold text-gray-800">
-                            {student.full_name}
+                    {renderAvatar()}
+                    <div className="min-w-0">
+                        <h3 className="font-semibold text-gray-800 truncate">
+                            {student.full_name || 'Không có tên'}
                         </h3>
-                        <p className="text-sm text-gray-500">
-                            ID: {student.id}
-                        </p>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-1 sm:space-y-0">
+                            {student.user?.phone && (
+                                <span className="text-xs bg-gray-100 px-2 py-0.5 rounded truncate">
+                                    {student.user.phone}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -162,43 +209,52 @@ const StudentCard = ({
             </div>
 
             <div className="space-y-3">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <User className="w-4 h-4" />
-                    <span>ID: {student.user_id}</span>
+                <div className="flex items-start space-x-2 text-sm text-gray-600">
+                    <User className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span className="truncate">
+                        Họ Tên: {student.full_name || 'N/A'}
+                    </span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4" />
-                    <span>{calculateAge(student.date_of_birth)} tuổi</span>
+
+                <div className="flex items-start space-x-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                        {calculateAge(student.date_of_birth)} tuổi
+                        {student.gender && (
+                            <span className="ml-2">
+                                ({getGenderText(student.gender)})
+                            </span>
+                        )}
+                    </span>
                 </div>
-                {student.address && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <MapPin className="w-4 h-4" />
-                        <span className="truncate">{student.address}</span>
+
+                {student.user?.email && (
+                    <div className="flex items-start space-x-2 text-sm text-gray-600">
+                        <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span className="truncate">{student.user.email}</span>
                     </div>
                 )}
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="flex justify-between items-center text-sm">
-                    <div className="flex items-center space-x-4">
-                        <div className="text-center">
-                            <p className="font-medium text-gray-900">
-                                {student.discount_percentage}%
-                            </p>
-                            <p className="text-xs text-gray-500">Giảm giá</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="font-medium text-gray-900">
-                                {student.enrollment_date
-                                    ? new Date(
-                                          student.enrollment_date
-                                      ).toLocaleDateString('vi-VN')
-                                    : 'N/A'}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                Ngày nhập học
-                            </p>
-                        </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                        <p className="font-medium text-gray-900">
+                            {student.discount_percentage || 0}%
+                        </p>
+                        <p className="text-xs text-gray-500">Giảm giá</p>
+                    </div>
+                    <div>
+                        <p className="font-medium text-gray-900">
+                            {formatDate(student.enrollment_date)}
+                        </p>
+                        <p className="text-xs text-gray-500">Ngày nhập học</p>
+                    </div>
+                    <div>
+                        <p className="font-medium text-gray-900">
+                            {student.class_enrollments?.length || 0}
+                        </p>
+                        <p className="text-xs text-gray-500">Lớp học</p>
                     </div>
                 </div>
             </div>
@@ -223,6 +279,9 @@ export default function StudentManagement() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+    const [showStudentDetailsDialog, setShowStudentDetailsDialog] =
+        useState(false);
 
     // Fetch students when component mounts
     useEffect(() => {
@@ -241,7 +300,8 @@ export default function StudentManagement() {
     };
 
     const handleViewDetails = (student: Student) => {
-        console.log('View student details:', student);
+        setViewingStudent(student);
+        setShowStudentDetailsDialog(true);
     };
 
     const filteredStudents = students.filter((student) => {
@@ -485,6 +545,15 @@ export default function StudentManagement() {
                     </div>
                 )}
             </div>
+            {/* Student Details Dialog */}
+            <DialogStudentDetails
+                isOpen={showStudentDetailsDialog}
+                onClose={() => {
+                    setShowStudentDetailsDialog(false);
+                    setViewingStudent(null);
+                }}
+                student={viewingStudent}
+            />
         </div>
     );
 }

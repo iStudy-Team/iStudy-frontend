@@ -198,14 +198,14 @@ export function DialogCreateClass({ children }: CreateClassProps) {
                                     </label>
                                     <input
                                         type="number"
-                                        min="0"
+                                        min="1"
                                         value={formData.capacity}
                                         onChange={(e) =>
                                             setFormData({
                                                 ...formData,
-                                                capacity:
-                                                    parseInt(e.target.value) ||
-                                                    0,
+                                                capacity: parseInt(
+                                                    e.target.value
+                                                ),
                                             })
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"

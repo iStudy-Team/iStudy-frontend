@@ -30,14 +30,13 @@ const TeacherCard = ({
 
     const getGenderText = (gender: TeacherGender) => {
         switch (gender) {
-            case TeacherGender.MALE:
+            case 1:
                 return 'Nam';
-            case TeacherGender.FEMALE:
+            case 2:
                 return 'Nữ';
-            case TeacherGender.OTHER:
-                return 'Khác';
+
             default:
-                return 'Không xác định';
+                return 'N/A';
         }
     };
 
@@ -50,6 +49,26 @@ const TeacherCard = ({
             default:
                 return 'Không xác định';
         }
+    };
+    const calculateAge = (dateOfBirth?: Date | string | null) => {
+        if (!dateOfBirth) return 'N/A';
+
+        const today = new Date();
+        const birthDate = new Date(dateOfBirth);
+
+        // Check if date is valid
+        if (isNaN(birthDate.getTime())) return 'N/A';
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (
+            monthDiff < 0 ||
+            (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
+            age--;
+        }
+        return age;
     };
 
     const formatDate = (date?: Date) => {
@@ -124,6 +143,10 @@ const TeacherCard = ({
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <UserCheck className="w-4 h-4" />
                     <span>ID: {teacher.user_id}</span>
+                </div>
+                <div className="flex items-start space-x-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>{calculateAge(teacher.date_of_birth)} tuổi</span>
                 </div>
 
                 {teacher.date_of_birth && (
