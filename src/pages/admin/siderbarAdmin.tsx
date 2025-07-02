@@ -9,6 +9,7 @@ import {
     UserPlus,
     DollarSign,
     Wallet,
+    Bell,
 } from 'lucide-react';
 import Account from '../../components/molecules/account';
 import { Link, useLocation } from '@tanstack/react-router';
@@ -104,6 +105,12 @@ export default function SidebarAdmin() {
             icon: Wallet,
             color: 'text-teal-400',
             path: '/admin/bank-account',
+        },
+        {
+            name: 'Quảng Cáo Lớp Học',
+            icon: Bell,
+            color: 'text-teal-400',
+            path: '/admin/new-class-promotion',
         },
     ];
 

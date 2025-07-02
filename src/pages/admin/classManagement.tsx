@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { useClassStore } from '@/store/useClassStore';
 import { Class, ClassStatus } from '@/api/class';
+import { Link } from '@tanstack/react-router';
 
 const ClassCard = ({
     classData,
@@ -72,7 +73,9 @@ const ClassCard = ({
 
     return (
         <div className="bg-[#f8f9fa] rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            {/* Header Section */}
             <div className="flex items-start justify-between mb-4">
+                {/* Class Info */}
                 <div className="flex items-center space-x-3">
                     <div
                         className={`w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -89,18 +92,21 @@ const ClassCard = ({
                             }`}
                         />
                     </div>
+
                     <div>
                         <h3 className="font-semibold text-gray-800">
                             {classData.name}
                         </h3>
                         <p className="text-sm text-gray-500">
-                            Lớp {classData.grade_level_id} - Năm{' '}
-                            {classData.academic_year_id}
+                            Khối Lớp: {classData.grade_level?.name} <br />
+                            Năm Học: {classData.academic_year.school_year}
                         </p>
                     </div>
                 </div>
 
+                {/* Actions Section */}
                 <div className="flex items-center space-x-2">
+                    {/* Status Badge */}
                     <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusStyle(
                             classData.status
@@ -109,6 +115,7 @@ const ClassCard = ({
                         {getStatusText(classData.status)}
                     </span>
 
+                    {/* Dropdown Menu */}
                     <div className="relative">
                         <button
                             onClick={() => setShowDropdown(!showDropdown)}
@@ -119,16 +126,19 @@ const ClassCard = ({
 
                         {showDropdown && (
                             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
-                                <button
+                                {/* View Details */}
+                                <Link
+                                    to={`/admin/class-management/${classData.id}`}
                                     onClick={() => {
-                                        onViewDetails(classData);
                                         setShowDropdown(false);
                                     }}
                                     className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
                                 >
                                     <Eye className="w-4 h-4" />
                                     <span>Xem chi tiết</span>
-                                </button>
+                                </Link>
+
+                                {/* Edit */}
                                 <button
                                     onClick={() => {
                                         onEdit(classData);
@@ -139,6 +149,8 @@ const ClassCard = ({
                                     <Edit3 className="w-4 h-4" />
                                     <span>Chỉnh sửa</span>
                                 </button>
+
+                                {/* Toggle Status */}
                                 <button
                                     onClick={() => {
                                         onToggleStatus(classData.id);
@@ -164,7 +176,9 @@ const ClassCard = ({
                 </div>
             </div>
 
+            {/* Details Section */}
             <div className="space-y-3">
+                {/* Capacity */}
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Users className="w-4 h-4" />
                     <span>
@@ -172,6 +186,7 @@ const ClassCard = ({
                     </span>
                 </div>
 
+                {/* Date Range */}
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
                     <span>
@@ -180,6 +195,7 @@ const ClassCard = ({
                     </span>
                 </div>
 
+                {/* Tuition Fee */}
                 {classData.tuition_fee && (
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <Clock className="w-4 h-4" />
@@ -199,6 +215,7 @@ export default function ClassManagementAdmin() {
     const [filterGrade, setFilterGrade] = useState('all');
     const [filterYear, setFilterYear] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+
     // Fetch classes on component mount
     useEffect(() => {
         getClasses(1, 10);
@@ -221,10 +238,7 @@ export default function ClassManagementAdmin() {
         console.log('Edit class:', classData);
     };
 
-    const handleViewDetails = (classData: Class) => {
-        // Implement view details functionality
-        console.log('View details:', classData);
-    };
+    const handleViewDetails = (classData: Class) => {};
 
     const filteredClasses = classes.filter((cls) => {
         const matchesGrade =
@@ -504,6 +518,7 @@ export default function ClassManagementAdmin() {
                     </div>
                 )}
             </div>
+            {/* Class Details Dialog */}
         </div>
     );
 }

@@ -11,6 +11,8 @@ import BankAccountViewer from '@/pages/admin/bankAccount';
 import CourseGradeManagement from '@/pages/admin/academicManagement';
 import TeacherManagement from '@/pages/admin/teacherManagement';
 import ScheduleManagementAdmin from '@/pages/admin/scheduleManagement';
+import ClassDetailsPage from '@/components/ClassDetails';
+import NewClassPromotionAdmin from '@/pages/admin/newClassPromotion';
 
 const _admintRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -28,6 +30,11 @@ export const admintRoute = _admintRoute.addChildren([
         getParentRoute: () => _admintRoute,
         path: '/class-management',
         component: () => <ClassManagementAdmin />,
+    }),
+    createRoute({
+        getParentRoute: () => _admintRoute,
+        path: '/class-management/$id',
+        component: () => <ClassDetailsPage />,
     }),
     createRoute({
         getParentRoute: () => _admintRoute,
@@ -69,5 +76,10 @@ export const admintRoute = _admintRoute.addChildren([
         getParentRoute: () => _admintRoute,
         path: '/schedule-management',
         component: () => <ScheduleManagementAdmin />,
+    }),
+    createRoute({
+        getParentRoute: () => _admintRoute,
+        path: '/new-class-promotion',
+        component: () => <NewClassPromotionAdmin />,
     }),
 ]);

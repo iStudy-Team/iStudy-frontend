@@ -130,7 +130,15 @@ export const DialogTeacherDetails = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent
+                className="max-w-4xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2
+  [&::-webkit-scrollbar-track]:rounded-full
+  [&::-webkit-scrollbar-track]:bg-gray-100
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-gray-300
+  dark:[&::-webkit-scrollbar-track]:bg-neutral-700
+  dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500 p-4 pr-2"
+            >
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-3 text-xl">
                         <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">

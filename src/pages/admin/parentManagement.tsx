@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useParentStore } from '@/store/useParentStore';
 import { Parent, ParentStatus } from '@/api/parent';
+import { DialogParentDetails } from '@/components/dialogParentDetails';
 
 interface ParentCardProps {
     parent: Parent;
@@ -130,7 +131,14 @@ const ParentCard = ({
                         <h3 className="font-semibold text-gray-800">
                             {parent.full_name}
                         </h3>
-                        <p className="text-sm text-gray-500">ID: {parent.id}</p>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-1 sm:space-y-0">
+                            {parent.phone && (
+                                <span className="text-xs bg-gray-100 px-2 py-0.5 rounded truncate">
+                                    {parent.phone}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -244,6 +252,9 @@ export default function ParentManagement() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRelationship, setFilterRelationship] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [viewingParent, setViewingParent] = useState<Parent | null>(null);
+    const [showParentDetailsDialog, setShowParentDetailsDialog] =
+        useState(false);
 
     // Fetch parents when component mounts
     useEffect(() => {
@@ -262,7 +273,8 @@ export default function ParentManagement() {
     };
 
     const handleViewDetails = (parent: Parent) => {
-        console.log('View parent details:', parent);
+        setViewingParent(parent);
+        setShowParentDetailsDialog(true);
     };
 
     const filteredParents = parents.filter((parent) => {
@@ -525,6 +537,15 @@ export default function ParentManagement() {
                     </div>
                 )}
             </div>
+            {/* Parent Details Dialog */}
+            <DialogParentDetails
+                isOpen={showParentDetailsDialog}
+                onClose={() => {
+                    setShowParentDetailsDialog(false);
+                    setViewingParent(null);
+                }}
+                parent={viewingParent}
+            />
         </div>
     );
 }

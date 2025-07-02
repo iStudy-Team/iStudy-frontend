@@ -1,4 +1,6 @@
 import { api } from './api';
+import { Grade } from './grade';
+import { Academic } from './academic';
 
 export enum ClassStatus {
     OPEN = 0,
@@ -7,6 +9,7 @@ export enum ClassStatus {
 }
 
 export interface Class {
+
     id: string;
     academic_year_id: string;
     grade_level_id: string;
@@ -18,6 +21,8 @@ export interface Class {
     status: ClassStatus;
     created_at: string | Date;
     updated_at: string | Date;
+    academic_year?: Academic;
+    grade_level?:Grade;
 }
 
 export type ClassCredentials = Pick<

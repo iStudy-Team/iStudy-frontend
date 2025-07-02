@@ -97,7 +97,15 @@ export const DialogAcademicDetails = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent
+                className="max-w-4xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2
+  [&::-webkit-scrollbar-track]:rounded-full
+  [&::-webkit-scrollbar-track]:bg-gray-100
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-gray-300
+  dark:[&::-webkit-scrollbar-track]:bg-neutral-700
+  dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500 p-4 pr-2"
+            >
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-3 text-xl">
                         <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -211,28 +219,47 @@ export const DialogAcademicDetails = ({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {academic.grade_levels.map((grade) => (
+                                <div className="flex flex-col gap-4">
+                                    {/* Chia mảng thành các nhóm 2 phần tử */}
+                                    {Array.from({
+                                        length: Math.ceil(
+                                            academic.grade_levels.length / 2
+                                        ),
+                                    }).map((_, rowIndex) => (
                                         <div
-                                            key={grade.id}
-                                            className="border rounded-lg p-4 bg-gray-50"
+                                            key={rowIndex}
+                                            className="flex flex-col sm:flex-row gap-4"
                                         >
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="font-semibold text-gray-900">
-                                                    {grade.name}
-                                                </h4>
-                                                <Badge className="bg-purple-100 text-purple-700 border-purple-200">
-                                                    Khối lớp
-                                                </Badge>
-                                            </div>
-                                            {grade.description && (
-                                                <p className="text-sm text-gray-600 mb-2">
-                                                    {grade.description}
-                                                </p>
-                                            )}
-                                            <div className="text-xs text-gray-500">
-                                                Mã: {grade.id}
-                                            </div>
+                                            {academic.grade_levels
+                                                .slice(
+                                                    rowIndex * 2,
+                                                    rowIndex * 2 + 2
+                                                )
+                                                .map((grade) => (
+                                                    <div
+                                                        key={grade.id}
+                                                        className="border rounded-lg p-4 bg-gray-50 flex-1" // Thêm flex-1 để các phần tử co dãn đều
+                                                    >
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <h4 className="font-semibold text-gray-900">
+                                                                {grade.name}
+                                                            </h4>
+                                                            <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                                                                Khối lớp
+                                                            </Badge>
+                                                        </div>
+                                                        {grade.description && (
+                                                            <p className="text-sm text-gray-600 mb-2">
+                                                                {
+                                                                    grade.description
+                                                                }
+                                                            </p>
+                                                        )}
+                                                        <div className="text-xs text-gray-500">
+                                                            Mã: {grade.id}
+                                                        </div>
+                                                    </div>
+                                                ))}
                                         </div>
                                     ))}
                                 </div>
@@ -267,11 +294,13 @@ export const DialogAcademicDetails = ({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="space-y-4">
+                                    {' '}
+                                    {/* Thay grid bằng space-y-4 để tạo khoảng cách dọc */}
                                     {academic.classes.map((classItem) => (
                                         <div
                                             key={classItem.id}
-                                            className="border rounded-lg p-4 bg-gray-50"
+                                            className="border rounded-lg p-4 bg-gray-50 w-full"
                                         >
                                             <div className="flex items-center justify-between mb-2">
                                                 <h4 className="font-semibold text-gray-900">
@@ -369,10 +398,10 @@ export const DialogAcademicDetails = ({
                     <Separator />
 
                     {/* Actions */}
-                    <div className="flex justify-end">
+                    <div className="flex justify-end ">
                         <button
                             onClick={onClose}
-                            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
                         >
                             Đóng
                         </button>
