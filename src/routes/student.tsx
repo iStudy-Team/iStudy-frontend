@@ -5,6 +5,7 @@ import StudentDashboard from '@/pages/student/studentDashboard';
 import StudentLayout from '@/layout/student';
 import RollCallStudent from '@/pages/student/rollCallStudent';
 import StudentSchedule from '@/pages/student/scheduleStudent';
+import ErnollmentClass from '@/pages/student/enrollmentClass';
 
 const _studentRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -27,5 +28,10 @@ export const studentRoute = _studentRoute.addChildren([
         getParentRoute: () => _studentRoute,
         path: '/rollcall',
         component: () => <RollCallStudent />,
+    }),
+    createRoute({
+        getParentRoute: () => _studentRoute,
+        path: '/erollment-class',
+        component: () => <ErnollmentClass />,
     }),
 ]);

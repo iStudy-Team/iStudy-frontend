@@ -12,6 +12,8 @@ import {
     Wallet,
     Calendar,
     Bell,
+    LogIn,
+    DoorOpen,
 } from 'lucide-react';
 import Account from '../../components/molecules/account';
 import { Link, useLocation } from '@tanstack/react-router';
@@ -70,6 +72,12 @@ export default function SidebarStudent() {
             icon: Users,
             color: 'text-teal-400',
             path: '/student/rollcall',
+        },
+        {
+            name: 'Tham Gia Lớp Học',
+            icon: DoorOpen,
+            color: 'text-teal-400',
+            path: '/student/erollment-class',
         },
     ];
 
