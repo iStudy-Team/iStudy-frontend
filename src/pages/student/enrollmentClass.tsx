@@ -1,537 +1,460 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { DevPagination } from '@/components/atoms/pagination';
 import {
-    BookOpen,
-    Users,
     Calendar,
     Clock,
-    DollarSign,
+    Users,
+    BookOpen,
+    Star,
+    MapPin,
     Search,
     Filter,
-    UserPlus,
-    MapPin,
-    Star,
-    ChevronDown,
+    ChevronRight,
 } from 'lucide-react';
 
-// Mock data for classes
+// Mock data cho các lớp học
 const mockClasses = [
     {
         id: 1,
-        name: 'Toán học nâng cao',
-        teacher: 'Thầy Nguyễn Văn A',
-        grade_level: 'Lớp 10',
-        subject: 'Toán học',
-        capacity: 30,
-        enrolled: 25,
-        tuition_fee: '2,000,000 VND',
-        start_date: '2024-09-01',
-        end_date: '2024-12-31',
-        schedule: 'Thứ 2, 4, 6 - 19:00-21:00',
-        location: 'Phòng A101',
+        name: 'Toán Cao Cấp A1',
+        instructor: 'TS. Nguyễn Văn A',
+        schedule: 'Thứ 2, 4, 6 - 7:00-9:00',
+        location: 'Phòng 301 - Tòa A',
+        students: 45,
+        maxStudents: 50,
         rating: 4.8,
         description:
-            'Lớp học chuyên sâu về các chủ đề toán học nâng cao dành cho học sinh lớp 10',
-        status: 'OPEN',
+            'Khóa học về giải tích và đại số tuyến tính cho sinh viên năm nhất',
+        isEnrolled: false,
+        category: 'Toán học',
     },
     {
         id: 2,
-        name: 'Tiếng Anh giao tiếp',
-        teacher: 'Cô Trần Thị B',
-        grade_level: 'Lớp 11',
-        subject: 'Tiếng Anh',
-        capacity: 25,
-        enrolled: 20,
-        tuition_fee: '1,800,000 VND',
-        start_date: '2024-09-15',
-        end_date: '2024-12-15',
-        schedule: 'Thứ 3, 5, 7 - 18:00-20:00',
-        location: 'Phòng B205',
+        name: 'Lập Trình Java Cơ Bản',
+        instructor: 'ThS. Trần Thị B',
+        schedule: 'Thứ 3, 5, 7 - 13:00-15:00',
+        location: 'Phòng máy 201 - Tòa B',
+        students: 38,
+        maxStudents: 40,
         rating: 4.9,
-        description:
-            'Phát triển kỹ năng giao tiếp tiếng Anh trong các tình huống thực tế',
-        status: 'OPEN',
+        description: 'Học lập trình Java từ cơ bản đến nâng cao',
+        isEnrolled: true,
+        category: 'Lập trình',
     },
     {
         id: 3,
-        name: 'Vật lý thí nghiệm',
-        teacher: 'Thầy Lê Văn C',
-        grade_level: 'Lớp 12',
-        subject: 'Vật lý',
-        capacity: 20,
-        enrolled: 18,
-        tuition_fee: '2,200,000 VND',
-        start_date: '2024-09-10',
-        end_date: '2024-12-20',
-        schedule: 'Thứ 2, 4 - 19:30-21:30',
-        location: 'Phòng thí nghiệm C301',
+        name: 'Tiếng Anh Giao Tiếp',
+        instructor: 'Ms. Sarah Johnson',
+        schedule: 'Thứ 2, 4 - 15:00-17:00',
+        location: 'Phòng 105 - Tòa C',
+        students: 25,
+        maxStudents: 30,
         rating: 4.7,
         description:
-            'Thực hành các thí nghiệm vật lý quan trọng cho kỳ thi THPT',
-        status: 'OPEN',
+            'Phát triển kỹ năng giao tiếp tiếng Anh trong môi trường học thuật',
+        isEnrolled: false,
+        category: 'Ngoại ngữ',
     },
     {
         id: 4,
-        name: 'Hóa học hữu cơ',
-        teacher: 'Cô Phạm Thị D',
-        grade_level: 'Lớp 11',
-        subject: 'Hóa học',
-        capacity: 25,
-        enrolled: 15,
-        tuition_fee: '1,900,000 VND',
-        start_date: '2024-09-05',
-        end_date: '2024-12-10',
-        schedule: 'Thứ 3, 6 - 18:30-20:30',
-        location: 'Phòng D102',
+        name: 'Vật Lý Đại Cương',
+        instructor: 'GS. Lê Minh C',
+        schedule: 'Thứ 3, 6 - 9:00-11:00',
+        location: 'Phòng 401 - Tòa A',
+        students: 42,
+        maxStudents: 45,
         rating: 4.6,
-        description: 'Khám phá thế giới hóa học hữu cơ với các phản ứng thú vị',
-        status: 'OPEN',
+        description: 'Cơ học, nhiệt học và điện từ học cơ bản',
+        isEnrolled: false,
+        category: 'Vật lý',
     },
     {
         id: 5,
-        name: 'Văn học Việt Nam',
-        teacher: 'Cô Hoàng Thị E',
-        grade_level: 'Lớp 12',
-        subject: 'Ngữ văn',
-        capacity: 35,
-        enrolled: 30,
-        tuition_fee: '1,500,000 VND',
-        start_date: '2024-09-08',
-        end_date: '2024-12-25',
-        schedule: 'Thứ 2, 5 - 19:00-21:00',
-        location: 'Phòng E201',
-        rating: 4.8,
-        description:
-            'Tìm hiểu sâu về văn học Việt Nam qua các tác phẩm kinh điển',
-        status: 'OPEN',
+        name: 'Hóa Học Đại Cương',
+        instructor: 'PGS. Hoàng Văn D',
+        schedule: 'Thứ 2, 5 - 9:00-11:00',
+        location: 'Phòng 205 - Tòa B',
+        students: 35,
+        maxStudents: 40,
+        rating: 4.5,
+        description: 'Các nguyên lý cơ bản của hóa học và ứng dụng',
+        isEnrolled: true,
+        category: 'Hóa học',
     },
     {
         id: 6,
-        name: 'Lịch sử Việt Nam',
-        teacher: 'Thầy Đặng Văn F',
-        grade_level: 'Lớp 10',
-        subject: 'Lịch sử',
-        capacity: 30,
-        enrolled: 25,
-        tuition_fee: '1,600,000 VND',
-        start_date: '2024-09-12',
-        end_date: '2024-12-18',
-        schedule: 'Thứ 4, 7 - 18:00-20:00',
-        location: 'Phòng F105',
+        name: 'Kinh Tế Vi Mô',
+        instructor: 'TS. Nguyễn Thị E',
+        schedule: 'Thứ 4, 7 - 15:00-17:00',
+        location: 'Phòng 102 - Tòa C',
+        students: 28,
+        maxStudents: 35,
+        rating: 4.7,
+        description:
+            'Nghiên cứu hành vi của cá nhân và doanh nghiệp trong thị trường',
+        isEnrolled: false,
+        category: 'Kinh tế',
+    },
+    {
+        id: 7,
+        name: 'Triết Học Mác-Lênin',
+        instructor: 'GS. Phạm Văn F',
+        schedule: 'Thứ 3, 6 - 7:00-9:00',
+        location: 'Phòng 301 - Tòa A',
+        students: 50,
+        maxStudents: 60,
+        rating: 4.3,
+        description:
+            'Học thuyết triết học Mác-Lênin và ứng dụng trong thời đại mới',
+        isEnrolled: false,
+        category: 'Chính trị',
+    },
+    {
+        id: 8,
+        name: 'Lịch Sử Đảng Cộng Sản Việt Nam',
+        instructor: 'TS. Lê Thị G',
+        schedule: 'Thứ 2, 4 - 13:00-15:00',
+        location: 'Phòng 403 - Tòa A',
+        students: 48,
+        maxStudents: 55,
+        rating: 4.4,
+        description:
+            'Lịch sử hình thành và phát triển của Đảng Cộng sản Việt Nam',
+        isEnrolled: true,
+        category: 'Lịch sử',
+    },
+    {
+        id: 9,
+        name: 'Thể Dục 1',
+        instructor: 'ThS. Trần Văn H',
+        schedule: 'Thứ 3, 5 - 15:00-17:00',
+        location: 'Sân thể thao',
+        students: 30,
+        maxStudents: 35,
+        rating: 4.8,
+        description: 'Rèn luyện thể chất và tinh thần thể thao',
+        isEnrolled: false,
+        category: 'Thể dục',
+    },
+    {
+        id: 10,
+        name: 'Tin Học Cơ Sở',
+        instructor: 'ThS. Vũ Thị I',
+        schedule: 'Thứ 4, 6 - 9:00-11:00',
+        location: 'Phòng máy 101 - Tòa B',
+        students: 32,
+        maxStudents: 35,
+        rating: 4.6,
+        description: 'Kiến thức cơ bản về tin học và ứng dụng văn phòng',
+        isEnrolled: false,
+        category: 'Tin học',
+    },
+    {
+        id: 11,
+        name: 'Cơ Sở Dữ Liệu',
+        instructor: 'TS. Đỗ Văn J',
+        schedule: 'Thứ 2, 4, 6 - 13:00-15:00',
+        location: 'Phòng máy 202 - Tòa B',
+        students: 40,
+        maxStudents: 45,
+        rating: 4.7,
+        description: 'Thiết kế và quản lý cơ sở dữ liệu quan hệ',
+        isEnrolled: true,
+        category: 'Lập trình',
+    },
+    {
+        id: 12,
+        name: 'Mạng Máy Tính',
+        instructor: 'PGS. Bùi Thị K',
+        schedule: 'Thứ 3, 5 - 9:00-11:00',
+        location: 'Phòng máy 203 - Tòa B',
+        students: 36,
+        maxStudents: 40,
         rating: 4.5,
-        description: 'Khám phá dòng chảy lịch sử dân tộc Việt Nam',
-        status: 'OPEN',
+        description: 'Nguyên lý và kỹ thuật mạng máy tính',
+        isEnrolled: false,
+        category: 'Mạng',
+    },
+    {
+        id: 13,
+        name: 'Kỹ Thuật Phần Mềm',
+        instructor: 'TS. Phạm Minh L',
+        schedule: 'Thứ 4, 6 - 13:00-15:00',
+        location: 'Phòng máy 301 - Tòa B',
+        students: 35,
+        maxStudents: 40,
+        rating: 4.8,
+        description: 'Quy trình phát triển phần mềm và quản lý dự án',
+        isEnrolled: false,
+        category: 'Lập trình',
+    },
+    {
+        id: 14,
+        name: 'Trí Tuệ Nhân Tạo',
+        instructor: 'PGS. Nguyễn Văn M',
+        schedule: 'Thứ 2, 5 - 15:00-17:00',
+        location: 'Phòng máy 302 - Tòa B',
+        students: 30,
+        maxStudents: 35,
+        rating: 4.9,
+        description: 'Machine Learning và Deep Learning cơ bản',
+        isEnrolled: true,
+        category: 'AI',
+    },
+    {
+        id: 15,
+        name: 'An Toàn Thông Tin',
+        instructor: 'TS. Lê Thị N',
+        schedule: 'Thứ 3, 7 - 9:00-11:00',
+        location: 'Phòng máy 204 - Tòa B',
+        students: 28,
+        maxStudents: 32,
+        rating: 4.6,
+        description: 'Bảo mật hệ thống và mạng máy tính',
+        isEnrolled: false,
+        category: 'Bảo mật',
+    },
+    {
+        id: 16,
+        name: 'Phát Triển Web',
+        instructor: 'ThS. Hoàng Văn O',
+        schedule: 'Thứ 4, 6 - 7:00-9:00',
+        location: 'Phòng máy 205 - Tòa B',
+        students: 42,
+        maxStudents: 45,
+        rating: 4.7,
+        description: 'HTML, CSS, JavaScript và các framework hiện đại',
+        isEnrolled: false,
+        category: 'Web',
+    },
+    {
+        id: 17,
+        name: 'Mobile App Development',
+        instructor: 'TS. Trần Minh P',
+        schedule: 'Thứ 2, 4 - 9:00-11:00',
+        location: 'Phòng máy 303 - Tòa B',
+        students: 33,
+        maxStudents: 38,
+        rating: 4.8,
+        description: 'Phát triển ứng dụng di động với React Native và Flutter',
+        isEnrolled: true,
+        category: 'Mobile',
+    },
+    {
+        id: 18,
+        name: 'Cloud Computing',
+        instructor: 'PGS. Vũ Thị Q',
+        schedule: 'Thứ 5, 7 - 13:00-15:00',
+        location: 'Phòng máy 206 - Tòa B',
+        students: 25,
+        maxStudents: 30,
+        rating: 4.5,
+        description: 'AWS, Azure và các dịch vụ cloud computing',
+        isEnrolled: false,
+        category: 'Cloud',
     },
 ];
 
-// Pagination Component
-const DevPagination = ({
-    currentPage,
-    totalPages,
-    onPageChange,
-    limit = 6,
-    visiblePages = 3,
-}) => {
-    const getVisiblePages = () => {
-        let start = Math.max(1, currentPage - Math.floor(visiblePages / 2));
-        let end = Math.min(totalPages, start + visiblePages - 1);
-
-        if (end - start + 1 < visiblePages) {
-            start = Math.max(1, end - visiblePages + 1);
-        }
-
-        return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-    };
-
-    const visiblePageNumbers = getVisiblePages();
-
-    const handlePageChange = (page) => {
-        if (page < 1 || page > totalPages || page === currentPage) return;
-        onPageChange(page, limit);
-    };
-
-    return (
-        <div className="flex items-center justify-center space-x-2 mt-8">
-            <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage <= 1}
-                className={`px-3 py-2 rounded-md ${
-                    currentPage <= 1
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border'
-                }`}
-            >
-                Trước
-            </button>
-
-            {visiblePageNumbers[0] > 1 && (
-                <>
-                    <button
-                        onClick={() => handlePageChange(1)}
-                        className={`px-3 py-2 rounded-md ${
-                            currentPage === 1
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-white text-gray-700 hover:bg-gray-50 border'
-                        }`}
-                    >
-                        1
-                    </button>
-                    {visiblePageNumbers[0] > 2 && (
-                        <span className="px-2">...</span>
-                    )}
-                </>
-            )}
-
-            {visiblePageNumbers.map((page) => (
-                <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-2 rounded-md ${
-                        page === currentPage
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white text-gray-700 hover:bg-gray-50 border'
-                    }`}
-                >
-                    {page}
-                </button>
-            ))}
-
-            {visiblePageNumbers[visiblePageNumbers.length - 1] < totalPages && (
-                <>
-                    {visiblePageNumbers[visiblePageNumbers.length - 1] <
-                        totalPages - 1 && <span className="px-2">...</span>}
-                    <button
-                        onClick={() => handlePageChange(totalPages)}
-                        className={`px-3 py-2 rounded-md ${
-                            currentPage === totalPages
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-white text-gray-700 hover:bg-gray-50 border'
-                        }`}
-                    >
-                        {totalPages}
-                    </button>
-                </>
-            )}
-
-            <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-                className={`px-3 py-2 rounded-md ${
-                    currentPage >= totalPages
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border'
-                }`}
-            >
-                Sau
-            </button>
-        </div>
-    );
-};
-
-export default function ClassEnrollment() {
-    const [classes, setClasses] = useState(mockClasses);
+export default function ErnollmentClass() {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedGrade, setSelectedGrade] = useState('');
-    const [selectedSubject, setSelectedSubject] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
-    const itemsPerPage = 6;
-
-    // Filter classes based on search and filters
-    const filteredClasses = classes.filter((cls) => {
-        const matchesSearch =
-            cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            cls.teacher.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            cls.subject.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesGrade =
-            !selectedGrade || cls.grade_level === selectedGrade;
-        const matchesSubject =
-            !selectedSubject || cls.subject === selectedSubject;
-
-        return matchesSearch && matchesGrade && matchesSubject;
-    });
-
-    const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
-    const currentClasses = filteredClasses.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [enrolledClasses, setEnrolledClasses] = useState(
+        mockClasses.filter((cls) => cls.isEnrolled).map((cls) => cls.id)
     );
 
-    const handlePageChange = (page) => {
+    const classesPerPage = 9;
+
+    // Lọc các lớp học
+    const filteredClasses = mockClasses.filter((cls) => {
+        const matchesSearch =
+            cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            cls.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory =
+            selectedCategory === 'all' || cls.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
+
+    const totalPages = Math.ceil(filteredClasses.length / classesPerPage);
+    const startIndex = (currentPage - 1) * classesPerPage;
+    const currentClasses = filteredClasses.slice(
+        startIndex,
+        startIndex + classesPerPage
+    );
+
+    const handlePageChange = (page, limit) => {
         setCurrentPage(page);
+        // Scroll to top when page changes
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleEnroll = (classId, className) => {
-        alert(`Bạn đã đăng ký thành công lớp: ${className}`);
+    const handleEnroll = (classId) => {
+        setEnrolledClasses((prev) =>
+            prev.includes(classId)
+                ? prev.filter((id) => id !== classId)
+                : [...prev, classId]
+        );
     };
 
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('vi-VN');
-    };
-
-    const getAvailableSlots = (capacity, enrolled) => {
-        return capacity - enrolled;
-    };
-
-    const getGrades = () => [...new Set(classes.map((cls) => cls.grade_level))];
-    const getSubjects = () => [...new Set(classes.map((cls) => cls.subject))];
+    const categories = [
+        'all',
+        'Toán học',
+        'Lập trình',
+        'Ngoại ngữ',
+        'Vật lý',
+        'Hóa học',
+        'Kinh tế',
+        'Chính trị',
+        'Lịch sử',
+        'Thể dục',
+        'Tin học',
+        'Mạng',
+        'AI',
+        'Bảo mật',
+        'Web',
+        'Mobile',
+        'Cloud',
+    ];
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 md:p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Danh sách lớp học
+                <div className="text-center mb-8">
+                    <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4 ">
+                        Đăng Ký Lớp Học
                     </h1>
-                    <p className="text-gray-600">
-                        Khám phá và đăng ký các lớp học phù hợp với bạn
-                    </p>
                 </div>
 
-                {/* Search and Filters */}
-                <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+                {/* Search and Filter */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border border-white/20">
                     <div className="flex flex-col lg:flex-row gap-4">
-                        {/* Search */}
                         <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Tìm kiếm lớp học, giáo viên, môn học..."
+                                placeholder="Tìm kiếm lớp học, giảng viên..."
+                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/90 text-gray-700 placeholder-gray-500"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             />
                         </div>
-
-                        {/* Filter Toggle */}
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            <Filter className="w-4 h-4" />
-                            <span>Bộ lọc</span>
-                            <ChevronDown
-                                className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`}
-                            />
-                        </button>
+                        <div className="relative lg:w-64">
+                            <Filter className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                            <select
+                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/90 text-gray-700"
+                                value={selectedCategory}
+                                onChange={(e) => {
+                                    setSelectedCategory(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                            >
+                                <option value="all">Tất cả môn học</option>
+                                {categories.slice(1).map((category) => (
+                                    <option key={category} value={category}>
+                                        {category}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-
-                    {/* Filters */}
-                    {showFilters && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Khối lớp
-                                    </label>
-                                    <select
-                                        value={selectedGrade}
-                                        onChange={(e) =>
-                                            setSelectedGrade(e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                        <option value="">
-                                            Tất cả khối lớp
-                                        </option>
-                                        {getGrades().map((grade) => (
-                                            <option key={grade} value={grade}>
-                                                {grade}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Môn học
-                                    </label>
-                                    <select
-                                        value={selectedSubject}
-                                        onChange={(e) =>
-                                            setSelectedSubject(e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                        <option value="">Tất cả môn học</option>
-                                        {getSubjects().map((subject) => (
-                                            <option
-                                                key={subject}
-                                                value={subject}
-                                            >
-                                                {subject}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Classes Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {currentClasses.map((classData) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+                    {currentClasses.map((cls) => (
                         <div
-                            key={classData.id}
-                            className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden"
+                            key={cls.id}
+                            className="group bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/30 hover:scale-105"
                         >
-                            {/* Class Header */}
-                            <div className="p-6 pb-4">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                            <BookOpen className="w-6 h-6 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 text-lg">
-                                                {classData.name}
-                                            </h3>
-                                            <p className="text-sm text-gray-500">
-                                                {classData.subject} -{' '}
-                                                {classData.grade_level}
-                                            </p>
+                            <div className="p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex-1">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                                            {cls.name}
+                                        </h3>
+                                        <div className="flex items-center text-gray-600 mb-2">
+                                            <BookOpen className="h-4 w-4 mr-2 text-blue-500" />
+                                            <span className="text-sm font-medium">
+                                                {cls.instructor}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-1 text-yellow-500">
-                                        <Star className="w-4 h-4 fill-current" />
-                                        <span className="text-sm font-medium text-gray-700">
-                                            {classData.rating}
+                                    <div className="flex items-center bg-gradient-to-r from-yellow-400 to-orange-400 px-3 py-1 rounded-full shadow-md">
+                                        <Star className="h-4 w-4 text-white mr-1" />
+                                        <span className="text-sm font-bold text-white">
+                                            {cls.rating}
                                         </span>
                                     </div>
                                 </div>
 
-                                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                    {classData.description}
+                                <div className="space-y-3 mb-4">
+                                    <div className="flex items-center text-gray-600">
+                                        <Clock className="h-4 w-4 mr-3 text-green-500" />
+                                        <span className="text-sm">
+                                            {cls.schedule}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center text-gray-600">
+                                        <MapPin className="h-4 w-4 mr-3 text-red-500" />
+                                        <span className="text-sm">
+                                            {cls.location}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center text-gray-600">
+                                        <Users className="h-4 w-4 mr-3 text-purple-500" />
+                                        <span className="text-sm">
+                                            {cls.students}/{cls.maxStudents}{' '}
+                                            sinh viên
+                                        </span>
+                                        <div className="ml-2 flex-1 bg-gray-200 rounded-full h-2">
+                                            <div
+                                                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
+                                                style={{
+                                                    width: `${(cls.students / cls.maxStudents) * 100}%`,
+                                                }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p className="text-gray-600 text-sm mb-5 leading-relaxed">
+                                    {cls.description}
                                 </p>
 
-                                {/* Teacher */}
-                                <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
-                                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                                        <span className="text-xs font-medium">
-                                            GV
-                                        </span>
-                                    </div>
-                                    <span>{classData.teacher}</span>
-                                </div>
-                            </div>
-
-                            {/* Class Details */}
-                            <div className="px-6 pb-4 space-y-3">
-                                {/* Capacity */}
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center space-x-2 text-gray-600">
-                                        <Users className="w-4 h-4" />
-                                        <span>Sức chứa</span>
-                                    </div>
-                                    <span className="text-gray-900 font-medium">
-                                        {classData.enrolled}/
-                                        {classData.capacity} học sinh
+                                <div className="flex items-center justify-between">
+                                    <span className="inline-block bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 text-xs font-semibold px-3 py-2 rounded-full border border-blue-200">
+                                        {cls.category}
                                     </span>
-                                </div>
-
-                                {/* Available slots */}
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">
-                                        Còn lại
-                                    </span>
-                                    <span
-                                        className={`font-medium ${
-                                            getAvailableSlots(
-                                                classData.capacity,
-                                                classData.enrolled
-                                            ) > 5
-                                                ? 'text-green-600'
-                                                : 'text-orange-600'
+                                    <button
+                                        onClick={() => handleEnroll(cls.id)}
+                                        className={`px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 transform hover:scale-105 shadow-md ${
+                                            enrolledClasses.includes(cls.id)
+                                                ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white hover:from-green-500 hover:to-emerald-600 shadow-green-200'
+                                                : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-blue-200'
                                         }`}
                                     >
-                                        {getAvailableSlots(
-                                            classData.capacity,
-                                            classData.enrolled
-                                        )}{' '}
-                                        chỗ
-                                    </span>
-                                </div>
-
-                                {/* Schedule */}
-                                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{classData.schedule}</span>
-                                </div>
-
-                                {/* Location */}
-                                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                                    <MapPin className="w-4 h-4" />
-                                    <span>{classData.location}</span>
-                                </div>
-
-                                {/* Duration */}
-                                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                                    <Calendar className="w-4 h-4" />
-                                    <span>
-                                        {formatDate(classData.start_date)} -{' '}
-                                        {formatDate(classData.end_date)}
-                                    </span>
-                                </div>
-
-                                {/* Tuition */}
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center space-x-2 text-gray-600">
-                                        <DollarSign className="w-4 h-4" />
-                                        <span>Học phí</span>
-                                    </div>
-                                    <span className="text-blue-600 font-semibold">
-                                        {classData.tuition_fee}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Action Button */}
-                            <div className="px-6 pb-6">
-                                <button
-                                    onClick={() =>
-                                        handleEnroll(
-                                            classData.id,
-                                            classData.name
-                                        )
-                                    }
-                                    disabled={
-                                        getAvailableSlots(
-                                            classData.capacity,
-                                            classData.enrolled
-                                        ) === 0
-                                    }
-                                    className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-colors flex items-center justify-center space-x-2 ${
-                                        getAvailableSlots(
-                                            classData.capacity,
-                                            classData.enrolled
-                                        ) === 0
-                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                                    }`}
-                                >
-                                    <UserPlus className="w-4 h-4" />
-                                    <span>
-                                        {getAvailableSlots(
-                                            classData.capacity,
-                                            classData.enrolled
-                                        ) === 0
-                                            ? 'Hết chỗ'
+                                        {enrolledClasses.includes(cls.id)
+                                            ? '✓ Đã đăng ký'
                                             : 'Đăng ký ngay'}
-                                    </span>
-                                </button>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Empty State */}
-                {currentClasses.length === 0 && (
-                    <div className="text-center py-12">
-                        <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {filteredClasses.length === 0 && (
+                    <div className="text-center py-16">
+                        <div className="text-6xl mb-4">📚</div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
                             Không tìm thấy lớp học
                         </h3>
-                        <p className="text-gray-500">
+                        <p className="text-gray-600">
                             Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
                         </p>
                     </div>
@@ -539,13 +462,59 @@ export default function ClassEnrollment() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <DevPagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        limit={itemsPerPage}
-                    />
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
+                        <DevPagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            limit={classesPerPage}
+                        />
+                    </div>
                 )}
+
+                {/* Stats */}
+                <div className="mt-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-2xl p-8 text-white">
+                    <h2 className="text-2xl font-bold text-center mb-8">
+                        Thống Kê Tổng Quan
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                            <div className="text-3xl font-bold mb-2">
+                                {filteredClasses.length}
+                            </div>
+                            <div className="text-blue-100">Lớp học có sẵn</div>
+                        </div>
+                        <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                            <div className="text-3xl font-bold mb-2">
+                                {enrolledClasses.length}
+                            </div>
+                            <div className="text-green-100">Lớp đã đăng ký</div>
+                        </div>
+                        <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                            <div className="text-3xl font-bold mb-2">
+                                {categories.length - 1}
+                            </div>
+                            <div className="text-purple-100">
+                                Danh mục môn học
+                            </div>
+                        </div>
+                        <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                            <div className="text-3xl font-bold mb-2">
+                                {Math.round(
+                                    (mockClasses.reduce(
+                                        (sum, cls) => sum + cls.rating,
+                                        0
+                                    ) /
+                                        mockClasses.length) *
+                                        10
+                                ) / 10}
+                            </div>
+                            <div className="text-yellow-100">
+                                Đánh giá trung bình
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
