@@ -144,3 +144,40 @@ export async function checkEnrollmentStatusApi(classId: string): Promise<{
         return { isEnrolled: false };
     }
 }
+
+// Get students enrolled in a specific class (returns student data with enrollment info)
+export async function getStudentsByClassIdApi(
+    classId: string,
+    page?: number,
+    limit?: number
+): Promise<{
+    data: Array<{
+        id: string;
+        enrollment: ClassEnrollment;
+        student: {
+            id: string;
+            user_id: string;
+            full_name: string;
+            gender: number;
+            date_of_birth?: Date;
+            address?: string;
+            enrollment_date?: Date;
+            status: number;
+            user?: {
+                id: string;
+                email: string;
+                phone?: string;
+                avatar?: string;
+            };
+        };
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}> {
+    const response = await api.get(`api/v1/class-enrollment/class/${classId}/students`, {
+        params: { page, limit },
+    });
+    return response.data;
+}

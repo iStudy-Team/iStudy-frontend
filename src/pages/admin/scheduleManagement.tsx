@@ -13,6 +13,7 @@ import {
     Users,
     CalendarDays,
     Trash2,
+    X,
 } from 'lucide-react';
 import {
     Select,
@@ -22,12 +23,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { DialogSchedule } from '@/components/dialogSchedule';
 import { DialogScheduleDetails } from '@/components/dialogScheduleDetails';
 import { useScheduleStore } from '@/store/useScheduleStore';
 import { useClassStore } from '@/store/useClassStore';
 import { Schedule } from '@/api/schedule';
-import { toast } from 'sonner';
+import { confirm } from '@/composables/onConfirm';
 
 // Schedule Card Component with extended data
 interface ScheduleWithClass extends Schedule {
@@ -40,12 +43,18 @@ const ScheduleCard = ({
     scheduleData,
     onEdit,
     onDelete,
+    onDeleteWithSessions,
     onViewDetails,
+    isSelected,
+    onSelect,
 }: {
     scheduleData: ScheduleWithClass;
     onEdit: (scheduleData: Schedule) => void;
     onDelete: (id: string) => void;
+    onDeleteWithSessions: (id: string) => void;
     onViewDetails: (scheduleData: Schedule) => void;
+    isSelected: boolean;
+    onSelect: (id: string) => void;
 }) => {
     const [showDropdown, setShowDropdown] = useState(false);
 
@@ -97,10 +106,17 @@ const ScheduleCard = ({
                 isUpcoming(scheduleData.day)
                     ? 'bg-[#f8f9fa] border-gray-100'
                     : 'bg-gray-50 border-gray-200'
-            }`}
+            } ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
+                    {onSelect && (
+                        <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => onSelect(scheduleData.id)}
+                            className="mt-1"
+                        />
+                    )}
                     <div
                         className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                             isUpcoming(scheduleData.day)
@@ -147,7 +163,7 @@ const ScheduleCard = ({
                         </button>
 
                         {showDropdown && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
+                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
                                 <button
                                     onClick={() => {
                                         onViewDetails(scheduleData);
@@ -168,6 +184,7 @@ const ScheduleCard = ({
                                     <Edit3 className="w-4 h-4" />
                                     <span>Chỉnh sửa</span>
                                 </button>
+                                <div className="border-t border-gray-100 my-1"></div>
                                 <button
                                     onClick={() => {
                                         onDelete(scheduleData.id);
@@ -176,7 +193,17 @@ const ScheduleCard = ({
                                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                                 >
                                     <Trash2 className="w-4 h-4" />
-                                    <span>Xóa lịch</span>
+                                    <span>Xóa chỉ lịch học</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        onDeleteWithSessions(scheduleData.id);
+                                        setShowDropdown(false);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Xóa lịch + buổi học</span>
                                 </button>
                             </div>
                         )}
@@ -211,9 +238,11 @@ export default function ScheduleManagementAdmin() {
         schedules,
         loading,
         error,
-        getSchedulesByClassOrDay,
         clearError,
         getSchedulesByMultipleClasses,
+        deleteSchedule,
+        deleteScheduleWithSessions,
+        deleteMultipleSchedules,
     } = useScheduleStore();
 
     const { classes, getAllClasses } = useClassStore();
@@ -221,6 +250,8 @@ export default function ScheduleManagementAdmin() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterClass, setFilterClass] = useState('all');
     const [filterDate, setFilterDate] = useState('all');
+    const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
+    const [showBulkActions, setShowBulkActions] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(
         null
     );
@@ -233,16 +264,34 @@ export default function ScheduleManagementAdmin() {
     // Fetch data on component mount
     useEffect(() => {
         getAllClasses();
-        getSchedulesByClassOrDay({ page: 1, limit: 50 });
-    }, [getAllClasses, getSchedulesByClassOrDay]);
+    }, [getAllClasses]);
 
-    // Fetch schedules by multiple classes when classes change
+    // Fetch schedules when classes are loaded
     useEffect(() => {
         const classIds = (classes || []).map((cls) => cls.id);
         if (classIds.length > 0) {
             getSchedulesByMultipleClasses({ class_ids: classIds });
         }
     }, [classes, getSchedulesByMultipleClasses]);
+
+    // Centralized function to refresh schedule data
+    const refreshSchedules = () => {
+        console.log('Refreshing schedules...');
+        const classIds = (classes || []).map((cls) => cls.id);
+        console.log('Available class IDs:', classIds);
+
+        if (classIds.length > 0) {
+            console.log(
+                'Calling getSchedulesByMultipleClasses with class IDs:',
+                classIds
+            );
+            getSchedulesByMultipleClasses({ class_ids: classIds });
+        } else {
+            console.log('No classes available, fetching classes first...');
+            // If classes haven't loaded yet, trigger getAllClasses which will then trigger schedule loading
+            getAllClasses();
+        }
+    };
 
     // Create extended schedules with class information
     const schedulesWithClassInfo: ScheduleWithClass[] = (schedules || []).map(
@@ -264,13 +313,99 @@ export default function ScheduleManagementAdmin() {
     };
 
     const handleDelete = async (scheduleId: string) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa lịch học này?')) {
-            // For now, we'll implement delete in the store if needed
-            // TODO: Add delete functionality to the schedule store
-            console.log('Delete schedule:', scheduleId);
-            toast.success('Xóa lịch học thành công');
-            getSchedulesByClassOrDay({ page: 1, limit: 50 });
+        try {
+            await confirm({
+                title: 'Xác nhận xóa lịch học',
+                description:
+                    'Bạn có chắc chắn muốn xóa lịch học này? Hành động này sẽ chỉ xóa lịch học mà không ảnh hưởng đến các buổi học đã tạo.',
+                confirmText: 'Xóa lịch học',
+                cancelText: 'Hủy',
+                confirmButtonVariant: 'destructive',
+                onConfirm: async () => {
+                    const success = await deleteSchedule(scheduleId);
+                    if (success) {
+                        setTimeout(() => {
+                            refreshSchedules();
+                        }, 100);
+                    }
+                },
+            });
+        } catch {
+            // User cancelled the action
         }
+    };
+
+    const handleDeleteWithSessions = async (scheduleId: string) => {
+        try {
+            await confirm({
+                title: 'Xác nhận xóa lịch học và buổi học',
+                description:
+                    'Bạn có chắc chắn muốn xóa lịch học này cùng với TẤT CẢ các buổi học liên quan? Hành động này không thể hoàn tác.',
+                confirmText: 'Xóa tất cả',
+                cancelText: 'Hủy',
+                confirmButtonVariant: 'destructive',
+                onConfirm: async () => {
+                    const success =
+                        await deleteScheduleWithSessions(scheduleId);
+                    if (success) {
+                        setTimeout(() => {
+                            refreshSchedules();
+                        }, 100);
+                    }
+                },
+            });
+        } catch {
+            // User cancelled the action
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedSchedules.length === 0) return;
+
+        try {
+            await confirm({
+                title: 'Xác nhận xóa nhiều lịch học',
+                description: `Bạn có chắc chắn muốn xóa ${selectedSchedules.length} lịch học đã chọn cùng với TẤT CẢ các buổi học liên quan? Hành động này không thể hoàn tác.`,
+                confirmText: `Xóa ${selectedSchedules.length} lịch học`,
+                cancelText: 'Hủy',
+                confirmButtonVariant: 'destructive',
+                onConfirm: async () => {
+                    const success =
+                        await deleteMultipleSchedules(selectedSchedules);
+                    if (success) {
+                        setSelectedSchedules([]);
+                        setShowBulkActions(false);
+                        setTimeout(() => {
+                            refreshSchedules();
+                        }, 100);
+                    }
+                },
+            });
+        } catch {
+            // User cancelled the action
+        }
+    };
+
+    const toggleScheduleSelection = (scheduleId: string) => {
+        setSelectedSchedules((prev) => {
+            const newSelection = prev.includes(scheduleId)
+                ? prev.filter((id) => id !== scheduleId)
+                : [...prev, scheduleId];
+
+            setShowBulkActions(newSelection.length > 0);
+            return newSelection;
+        });
+    };
+
+    const selectAllSchedules = () => {
+        const allIds = filteredSchedules.map((s) => s.id);
+        setSelectedSchedules(allIds);
+        setShowBulkActions(allIds.length > 0);
+    };
+
+    const clearSelection = () => {
+        setSelectedSchedules([]);
+        setShowBulkActions(false);
     };
 
     const handleViewDetails = (scheduleData: Schedule) => {
@@ -279,8 +414,10 @@ export default function ScheduleManagementAdmin() {
     };
 
     const handleDialogSuccess = () => {
-        // Refresh data after successful create/update
-        getSchedulesByClassOrDay({ page: 1, limit: 50 });
+        // Refresh data after successful create/update with a small delay to ensure server state is consistent
+        setTimeout(() => {
+            refreshSchedules();
+        }, 100);
         setEditingSchedule(null);
     };
 
@@ -312,6 +449,25 @@ export default function ScheduleManagementAdmin() {
 
         return matchesClass && matchesSearch && matchesDate;
     });
+
+    // Clean up selection when schedules change
+    useEffect(() => {
+        const validScheduleIds = filteredSchedules.map((s) => s.id);
+        const updatedSelection = selectedSchedules.filter((id) =>
+            validScheduleIds.includes(id)
+        );
+
+        if (updatedSelection.length !== selectedSchedules.length) {
+            setSelectedSchedules(updatedSelection);
+            setShowBulkActions(updatedSelection.length > 0);
+        }
+    }, [filteredSchedules, selectedSchedules]);
+
+    // Debug: Log when schedules change
+    useEffect(() => {
+        console.log('Schedules updated:', schedules?.length || 0, 'schedules');
+        console.log('Classes loaded:', classes?.length || 0, 'classes');
+    }, [schedules, classes]);
 
     const stats = {
         total: schedulesWithClassInfo.length,
@@ -417,6 +573,27 @@ export default function ScheduleManagementAdmin() {
                 <div className="bg-white rounded-xl p-6 shadow-sm">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    checked={
+                                        selectedSchedules.length ===
+                                            filteredSchedules.length &&
+                                        filteredSchedules.length > 0
+                                    }
+                                    onCheckedChange={(checked) => {
+                                        if (checked) {
+                                            selectAllSchedules();
+                                        } else {
+                                            clearSelection();
+                                        }
+                                    }}
+                                    className="border-gray-300"
+                                />
+                                <label className="text-sm text-gray-600">
+                                    Chọn tất cả
+                                </label>
+                            </div>
+
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                 <input
@@ -477,18 +654,80 @@ export default function ScheduleManagementAdmin() {
                             </Select>
                         </div>
 
-                        <DialogSchedule
-                            editData={editingSchedule}
-                            onSuccess={handleDialogSuccess}
-                        >
-                            <button className="flex items-center space-x-2 bg-teal-400 text-white px-6 py-2 rounded-lg hover:bg-teal-500 transition-colors cursor-pointer">
-                                <Plus className="w-5 h-5" />
-                                <span>Tạo Lịch Học Mới</span>
-                            </button>
-                        </DialogSchedule>
+                        <div className="flex items-center space-x-4">
+                            {showBulkActions && (
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={clearSelection}
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                    >
+                                        Hủy chọn tất cả
+                                    </button>
+                                    <button
+                                        onClick={handleBulkDelete}
+                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        Xóa đã chọn
+                                    </button>
+                                </div>
+                            )}
+
+                            <DialogSchedule
+                                editData={editingSchedule}
+                                onSuccess={handleDialogSuccess}
+                            >
+                                <button className="flex items-center space-x-2 bg-teal-400 text-white px-6 py-2 rounded-lg hover:bg-teal-500 transition-colors cursor-pointer">
+                                    <Plus className="w-5 h-5" />
+                                    <span>Tạo Lịch Học Mới</span>
+                                </button>
+                            </DialogSchedule>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Bulk Actions Toolbar */}
+            {showBulkActions && (
+                <div className="max-w-7xl mx-auto px-8 mb-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <span className="text-blue-800 font-medium">
+                                    {selectedSchedules.length} lịch học đã chọn
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={selectAllSchedules}
+                                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                                >
+                                    Chọn tất cả ({filteredSchedules.length})
+                                </Button>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={handleBulkDelete}
+                                    className="bg-red-600 hover:bg-red-700"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Xóa tất cả
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={clearSelection}
+                                    className="border-gray-300"
+                                >
+                                    <X className="w-4 h-4 mr-2" />
+                                    Hủy chọn
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Schedules Grid */}
             <div className="max-w-7xl mx-auto px-8 pb-8">
@@ -508,10 +747,7 @@ export default function ScheduleManagementAdmin() {
                         <p className="text-gray-500 mb-4">{error}</p>
                         <button
                             onClick={() => {
-                                getSchedulesByClassOrDay({
-                                    page: 1,
-                                    limit: 50,
-                                });
+                                refreshSchedules();
                                 clearError();
                             }}
                             className="px-4 py-2 bg-teal-400 text-white rounded-lg hover:bg-teal-500"
@@ -537,7 +773,12 @@ export default function ScheduleManagementAdmin() {
                                 scheduleData={scheduleData}
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
+                                onDeleteWithSessions={handleDeleteWithSessions}
                                 onViewDetails={handleViewDetails}
+                                isSelected={selectedSchedules.includes(
+                                    scheduleData.id
+                                )}
+                                onSelect={toggleScheduleSelection}
                             />
                         ))}
                     </div>

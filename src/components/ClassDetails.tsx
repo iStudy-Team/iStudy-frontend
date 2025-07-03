@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from '@tanstack/react-router';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -18,120 +19,14 @@ import {
     ChevronDown,
     ChevronUp,
     Plus,
+    Loader2,
 } from 'lucide-react';
-
-// Mock data cho classData và students
-const mockClassData = {
-    id: 'CL001',
-    name: '10A1',
-    capacity: 40,
-    tuition_fee: '5000000',
-    status: 1,
-    start_date: '2024-09-01',
-    end_date: '2025-06-30',
-    created_at: '2024-08-15',
-    grade_level: {
-        name: 'Lớp 10',
-    },
-    academic_year: {
-        school_year: '2024-2025',
-    },
-    class_teachers: [
-        {
-            id: 1,
-            role: 0,
-            teacher: {
-                full_name: 'Nguyễn Thị Lan',
-                status: 1,
-                user: {
-                    email: 'lan.nguyen@school.edu.vn',
-                    phone: '0987654321',
-                },
-            },
-        },
-    ],
-    schedule: [
-        {
-            day_of_week: 'Thứ 2',
-            start_time: '07:30',
-            end_time: '11:30',
-            subject: 'Toán học',
-        },
-        {
-            day_of_week: 'Thứ 3',
-            start_time: '07:30',
-            end_time: '11:30',
-            subject: 'Ngữ văn',
-        },
-        {
-            day_of_week: 'Thứ 4',
-            start_time: '07:30',
-            end_time: '11:30',
-            subject: 'Tiếng Anh',
-        },
-    ],
-};
-
-const mockStudents = [
-    {
-        id: 1,
-        student_code: 'HS001',
-        full_name: 'Nguyễn Văn An',
-        gender: 1,
-        date_of_birth: '2008-05-15',
-        address: '123 Đường ABC, Quận 1, TP.HCM',
-        phone: '0987654321',
-        parent_name: 'Nguyễn Văn Bình',
-        parent_phone: '0912345678',
-        enrollment_date: '2024-08-15',
-        status: 1,
-        avatar: null,
-    },
-    {
-        id: 2,
-        student_code: 'HS002',
-        full_name: 'Trần Thị Bảo',
-        gender: 0,
-        date_of_birth: '2008-03-22',
-        address: '456 Đường DEF, Quận 3, TP.HCM',
-        phone: '0987654322',
-        parent_name: 'Trần Văn Cường',
-        parent_phone: '0912345679',
-        enrollment_date: '2024-08-15',
-        status: 1,
-        avatar: null,
-    },
-    {
-        id: 3,
-        student_code: 'HS003',
-        full_name: 'Lê Minh Đức',
-        gender: 1,
-        date_of_birth: '2008-07-10',
-        address: '789 Đường GHI, Quận 5, TP.HCM',
-        phone: '0987654323',
-        parent_name: 'Lê Thị Hoa',
-        parent_phone: '0912345680',
-        enrollment_date: '2024-08-20',
-        status: 0,
-        avatar: null,
-    },
-    {
-        id: 4,
-        student_code: 'HS004',
-        full_name: 'Phạm Thị Mai',
-        gender: 0,
-        date_of_birth: '2008-09-12',
-        address: '321 Đường JKL, Quận 7, TP.HCM',
-        phone: '0987654324',
-        parent_name: 'Phạm Văn Nam',
-        parent_phone: '0912345681',
-        enrollment_date: '2024-08-18',
-        status: 1,
-        avatar: null,
-    },
-];
+import { useClassStore } from '@/store/useClassStore';
+import { useScheduleStore } from '@/store/useScheduleStore';
+import { ClassTeacher } from '@/api/class';
 
 export default function ClassDetailsPage() {
+    const { id } = useParams({ strict: false });
     const [activeTab, setActiveTab] = useState('overview');
     const [searchStudent, setSearchStudent] = useState('');
     const [studentFilter, setStudentFilter] = useState('all');
@@ -144,7 +39,52 @@ export default function ClassDetailsPage() {
         system: false,
     });
 
-    const classData = mockClassData;
+    // Store hooks
+    const {
+        currentClass: classData,
+        loading: classLoading,
+        error: classError,
+        getClassById,
+    } = useClassStore();
+
+    const { schedules, getSchedulesByClassOrDay } = useScheduleStore();
+
+    // Load data on mount
+    useEffect(() => {
+        if (id) {
+            // Fetch class details
+            getClassById(id);
+            // Fetch class schedules
+            getSchedulesByClassOrDay({ class_id: id });
+        }
+    }, [id, getClassById, getSchedulesByClassOrDay]);
+
+    // Loading state
+    if (classLoading || !classData) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">
+                        Đang tải thông tin lớp học...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (classError && !classData) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-red-600 text-lg">
+                        Có lỗi xảy ra: {classError}
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return 'Chưa xác định';
@@ -165,9 +105,9 @@ export default function ClassDetailsPage() {
 
     const getStatusColor = (status: number) => {
         switch (status) {
-            case 1:
-                return 'bg-green-100 text-green-700 border-green-200';
             case 0:
+                return 'bg-green-100 text-green-700 border-green-200';
+            case 1:
                 return 'bg-red-100 text-red-700 border-red-200';
             default:
                 return 'bg-gray-100 text-gray-600 border-gray-200';
@@ -176,9 +116,9 @@ export default function ClassDetailsPage() {
 
     const getStatusText = (status: number) => {
         switch (status) {
-            case 1:
-                return 'Đang hoạt động';
             case 0:
+                return 'Đang hoạt động';
+            case 1:
                 return 'Ngừng hoạt động';
             default:
                 return 'Không xác định';
@@ -200,30 +140,33 @@ export default function ClassDetailsPage() {
         return gender === 1 ? 'Nam' : 'Nữ';
     };
 
-    const toggleSection = (section: string) => {
+    const toggleSection = (section: keyof typeof expandedSections) => {
         setExpandedSections((prev) => ({
             ...prev,
             [section]: !prev[section],
         }));
     };
 
-    const filteredStudents = mockStudents.filter((student) => {
+    const students = classData?.class_enrollments || [];
+
+    const filteredStudents = students.filter((enrollment) => {
+        const student = enrollment.student;
         const matchesSearch =
             student.full_name
                 .toLowerCase()
                 .includes(searchStudent.toLowerCase()) ||
-            student.student_code
+            (student.user?.username || '')
                 .toLowerCase()
                 .includes(searchStudent.toLowerCase());
         const matchesFilter =
             studentFilter === 'all' ||
-            (studentFilter === 'active' && student.status === 1) ||
-            (studentFilter === 'inactive' && student.status === 0);
+            (studentFilter === 'active' && enrollment.status === 1) ||
+            (studentFilter === 'inactive' && enrollment.status === 0);
         return matchesSearch && matchesFilter;
     });
 
-    const activeStudents = mockStudents.filter((s) => s.status === 1).length;
-    const inactiveStudents = mockStudents.filter((s) => s.status === 0).length;
+    const activeStudents = students.filter((s) => s.status === 1).length;
+    const inactiveStudents = students.filter((s) => s.status === 0).length;
 
     const tabs = [
         { id: 'overview', label: 'Tổng quan', icon: BookOpen },
@@ -231,12 +174,19 @@ export default function ClassDetailsPage() {
         { id: 'schedule', label: 'Lịch học', icon: Calendar },
     ];
 
+    interface CollapsibleSectionProps {
+        title: string;
+        icon: React.ComponentType<{ className?: string }>;
+        sectionKey: keyof typeof expandedSections;
+        children: React.ReactNode;
+    }
+
     const CollapsibleSection = ({
         title,
         icon: Icon,
         sectionKey,
         children,
-    }) => (
+    }: CollapsibleSectionProps) => (
         <Card className="shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
             <CardHeader
                 className="cursor-pointer hover:bg-gray-50 transition-colors"
@@ -360,7 +310,7 @@ export default function ClassDetailsPage() {
                                     <div>
                                         <p className="text-lg font-bold text-gray-900">
                                             {formatCurrency(
-                                                classData.tuition_fee
+                                                classData.tuition_fee || '0'
                                             )}
                                         </p>
                                         <p className="text-sm text-gray-500">
@@ -451,10 +401,10 @@ export default function ClassDetailsPage() {
                             icon={User}
                             sectionKey="teachers"
                         >
-                            {classData.class_teachers?.length > 0 ? (
+                            {(classData.class_teachers?.length || 0) > 0 ? (
                                 <div className="grid gap-4">
-                                    {classData.class_teachers.map(
-                                        (teacher: any) => (
+                                    {classData.class_teachers?.map(
+                                        (teacher: ClassTeacher) => (
                                             <div
                                                 key={teacher.id}
                                                 className="p-4 border rounded-xl bg-white hover:shadow-md transition-shadow"
@@ -548,8 +498,8 @@ export default function ClassDetailsPage() {
                                         Danh sách học sinh
                                     </h3>
                                     <p className="text-gray-600 mt-1">
-                                        Tổng cộng {mockStudents.length} học sinh
-                                        • {activeStudents} đang học •{' '}
+                                        Tổng cộng {students.length} học sinh •{' '}
+                                        {activeStudents} đang học •{' '}
                                         {inactiveStudents} đã nghỉ
                                     </p>
                                 </div>
@@ -601,95 +551,115 @@ export default function ClassDetailsPage() {
                         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
                             {filteredStudents.length > 0 ? (
                                 <div className="divide-y divide-gray-200">
-                                    {filteredStudents.map((student) => (
-                                        <div
-                                            key={student.id}
-                                            className="p-6 hover:bg-gray-50 transition-colors"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-14 h-14 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white font-semibold text-lg">
-                                                        {student.full_name.charAt(
-                                                            0
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-3 mb-1">
-                                                            <h4 className="font-semibold text-xl text-gray-900">
-                                                                {
-                                                                    student.full_name
-                                                                }
-                                                            </h4>
-                                                            <Badge
-                                                                className={
-                                                                    student.status ===
-                                                                    1
-                                                                        ? 'bg-green-100 text-green-700'
-                                                                        : 'bg-red-100 text-red-700'
-                                                                }
-                                                            >
-                                                                {student.status ===
-                                                                1
-                                                                    ? 'Đang học'
-                                                                    : 'Đã nghỉ'}
-                                                            </Badge>
-                                                        </div>
-                                                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                                                            <span className="font-mono bg-gray-100 px-2 py-1 rounded">
-                                                                {
-                                                                    student.student_code
-                                                                }
-                                                            </span>
-                                                            <span>
-                                                                {getGenderText(
-                                                                    student.gender
-                                                                )}
-                                                            </span>
-                                                            <span>
-                                                                {formatDate(
-                                                                    student.date_of_birth
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                                                        <Phone className="w-4 h-4" />
-                                                        {student.phone}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        PH:{' '}
-                                                        {student.parent_name}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="mt-4 pl-18">
-                                                <div className="text-sm text-gray-600 space-y-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <MapPin className="w-4 h-4" />
-                                                        <span>
-                                                            {student.address}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-6">
-                                                        <span>
-                                                            Ngày nhập học:{' '}
-                                                            {formatDate(
-                                                                student.enrollment_date
+                                    {filteredStudents.map((enrollment) => {
+                                        const student = enrollment.student;
+                                        return (
+                                            <div
+                                                key={enrollment.id}
+                                                className="p-6 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-14 h-14 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white font-semibold text-lg">
+                                                            {student.full_name.charAt(
+                                                                0
                                                             )}
-                                                        </span>
-                                                        <span>
-                                                            SĐT phụ huynh:{' '}
-                                                            {
-                                                                student.parent_phone
-                                                            }
-                                                        </span>
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-center gap-3 mb-1">
+                                                                <h4 className="font-semibold text-xl text-gray-900">
+                                                                    {
+                                                                        student.full_name
+                                                                    }
+                                                                </h4>
+                                                                <Badge
+                                                                    className={
+                                                                        enrollment.status ===
+                                                                        1
+                                                                            ? 'bg-green-100 text-green-700'
+                                                                            : 'bg-red-100 text-red-700'
+                                                                    }
+                                                                >
+                                                                    {enrollment.status ===
+                                                                    1
+                                                                        ? 'Đang học'
+                                                                        : 'Đã nghỉ'}
+                                                                </Badge>
+                                                            </div>
+                                                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                                                                <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                                                                    {student
+                                                                        .user
+                                                                        ?.username ||
+                                                                        'N/A'}
+                                                                </span>
+                                                                <span>
+                                                                    {getGenderText(
+                                                                        student.gender
+                                                                    )}
+                                                                </span>
+                                                                <span>
+                                                                    {formatDate(
+                                                                        student.date_of_birth
+                                                                            ? typeof student.date_of_birth ===
+                                                                              'string'
+                                                                                ? student.date_of_birth
+                                                                                : student.date_of_birth.toISOString()
+                                                                            : null
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                                                            <Phone className="w-4 h-4" />
+                                                            {student.user
+                                                                ?.phone ||
+                                                                'N/A'}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            Email:{' '}
+                                                            {student.user
+                                                                ?.email ||
+                                                                'N/A'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-4 pl-18">
+                                                    <div className="text-sm text-gray-600 space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <MapPin className="w-4 h-4" />
+                                                            <span>
+                                                                {student.address ||
+                                                                    'Chưa cập nhật địa chỉ'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-6">
+                                                            <span>
+                                                                Ngày nhập học:{' '}
+                                                                {formatDate(
+                                                                    typeof enrollment.enrollment_date ===
+                                                                        'string'
+                                                                        ? enrollment.enrollment_date
+                                                                        : enrollment.enrollment_date?.toISOString() ||
+                                                                              null
+                                                                )}
+                                                            </span>
+                                                            {enrollment.tuition_fee && (
+                                                                <span>
+                                                                    Học phí:{' '}
+                                                                    {formatCurrency(
+                                                                        enrollment.tuition_fee
+                                                                    )}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <div className="text-center py-16">
@@ -710,14 +680,14 @@ export default function ClassDetailsPage() {
                             icon={Clock}
                             sectionKey="schedule"
                         >
-                            {classData.schedule?.length > 0 ? (
+                            {schedules && schedules.length > 0 ? (
                                 <div className="bg-white rounded-lg overflow-hidden shadow-sm">
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Thứ
+                                                        Ngày
                                                     </th>
                                                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Giờ bắt đầu
@@ -726,41 +696,84 @@ export default function ClassDetailsPage() {
                                                         Giờ kết thúc
                                                     </th>
                                                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Môn học
+                                                        Tên lớp
+                                                    </th>
+                                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Giáo viên
                                                     </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
-                                                {classData.schedule.map(
-                                                    (
-                                                        item: any,
-                                                        index: number
-                                                    ) => (
+                                                {schedules.map(
+                                                    (schedule, index) => (
                                                         <tr
-                                                            key={index}
+                                                            key={
+                                                                schedule.id ||
+                                                                index
+                                                            }
                                                             className="hover:bg-gray-50"
                                                         >
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                {
-                                                                    item.day_of_week
-                                                                }
+                                                                {schedule.day
+                                                                    ? formatDate(
+                                                                          typeof schedule.day ===
+                                                                              'string'
+                                                                              ? schedule.day
+                                                                              : schedule.day.toISOString()
+                                                                      )
+                                                                    : 'Chưa xác định'}
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                                {
-                                                                    item.start_time
-                                                                }
+                                                                {schedule.start_time
+                                                                    ? new Date(
+                                                                          schedule.start_time
+                                                                      ).toLocaleTimeString(
+                                                                          'vi-VN',
+                                                                          {
+                                                                              hour: '2-digit',
+                                                                              minute: '2-digit',
+                                                                          }
+                                                                      )
+                                                                    : 'N/A'}
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                                {item.end_time}
+                                                                {schedule.end_time
+                                                                    ? new Date(
+                                                                          schedule.end_time
+                                                                      ).toLocaleTimeString(
+                                                                          'vi-VN',
+                                                                          {
+                                                                              hour: '2-digit',
+                                                                              minute: '2-digit',
+                                                                          }
+                                                                      )
+                                                                    : 'N/A'}
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                                 <Badge
                                                                     variant="outline"
                                                                     className="text-base"
                                                                 >
-                                                                    {item.subject ||
-                                                                        '---'}
+                                                                    {schedule.class_name ||
+                                                                        classData.name ||
+                                                                        'N/A'}
                                                                 </Badge>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                                {schedule.teacher &&
+                                                                schedule.teacher
+                                                                    .length > 0
+                                                                    ? schedule.teacher
+                                                                          .map(
+                                                                              (
+                                                                                  t
+                                                                              ) =>
+                                                                                  t.full_name
+                                                                          )
+                                                                          .join(
+                                                                              ', '
+                                                                          )
+                                                                    : 'Chưa phân công'}
                                                             </td>
                                                         </tr>
                                                     )
@@ -793,7 +806,14 @@ export default function ClassDetailsPage() {
                                     <div className="flex items-center gap-2">
                                         <Clock className="w-5 h-5 text-gray-500" />
                                         <p className="text-xl text-gray-900">
-                                            {formatDate(classData.start_date)}
+                                            {formatDate(
+                                                classData.start_date
+                                                    ? typeof classData.start_date ===
+                                                      'string'
+                                                        ? classData.start_date
+                                                        : classData.start_date.toISOString()
+                                                    : null
+                                            )}
                                         </p>
                                     </div>
                                 </div>
@@ -804,7 +824,14 @@ export default function ClassDetailsPage() {
                                     <div className="flex items-center gap-2">
                                         <Clock className="w-5 h-5 text-gray-500" />
                                         <p className="text-xl text-gray-900">
-                                            {formatDate(classData.end_date)}
+                                            {formatDate(
+                                                classData.end_date
+                                                    ? typeof classData.end_date ===
+                                                      'string'
+                                                        ? classData.end_date
+                                                        : classData.end_date.toISOString()
+                                                    : null
+                                            )}
                                         </p>
                                     </div>
                                 </div>
@@ -831,7 +858,12 @@ export default function ClassDetailsPage() {
                                         Ngày tạo
                                     </label>
                                     <p className="text-xl text-gray-900">
-                                        {formatDate(classData.created_at)}
+                                        {formatDate(
+                                            typeof classData.created_at ===
+                                                'string'
+                                                ? classData.created_at
+                                                : classData.created_at.toISOString()
+                                        )}
                                     </p>
                                 </div>
                             </div>

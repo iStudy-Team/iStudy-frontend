@@ -38,6 +38,43 @@ export interface GetScheduleByMultipleClassDto {
     limit?: number;
 }
 
+export interface DeleteMultipleSchedulesDto {
+    scheduleIds: string[];
+}
+
+export interface CreateMultipleSchedulesDto {
+    schedules: ScheduleCredentials[];
+}
+
+export interface DeleteScheduleResponse {
+    success: boolean;
+    message: string;
+    deletedSchedule: Schedule;
+}
+
+export interface DeletedSession {
+    id: string;
+    schedule_id: string;
+    session_date: Date;
+    status: number;
+}
+
+export interface DeleteScheduleWithSessionsResponse {
+    success: boolean;
+    message: string;
+    deletedSchedule: Schedule;
+    deletedSessionsCount: number;
+    deletedSessions: DeletedSession[];
+}
+
+export interface DeleteMultipleSchedulesResponse {
+    success: boolean;
+    message: string;
+    deletedCount: number;
+    deletedSchedules: Schedule[];
+    totalDeletedSessions: number;
+}
+
 // Create schedule
 export async function createScheduleApi(dto: ScheduleCredentials): Promise<Schedule> {
     const payload = {
@@ -88,5 +125,35 @@ export async function getSchedulesByMultipleClassesApi(dto: GetScheduleByMultipl
 // Get schedules by student (current authenticated user)
 export async function getSchedulesByStudentApi(): Promise<Schedule[]> {
     const response = await api.get('api/v1/schedule/get-by-student');
+    return response.data;
+}
+
+// Delete schedule (preserve related sessions)
+export async function deleteScheduleApi(id: string): Promise<DeleteScheduleResponse> {
+    const response = await api.delete(`api/v1/schedule/${id}`);
+    return response.data;
+}
+
+// Delete schedule and all related class sessions
+export async function deleteScheduleWithSessionsApi(id: string): Promise<DeleteScheduleWithSessionsResponse> {
+    const response = await api.delete(`api/v1/schedule/${id}/with-sessions`);
+    return response.data;
+}
+
+// Delete multiple schedules and their related sessions
+export async function deleteMultipleSchedulesApi(dto: DeleteMultipleSchedulesDto): Promise<DeleteMultipleSchedulesResponse> {
+    const response = await api.delete('api/v1/schedule/batch', { data: dto });
+    return response.data;
+}
+
+// Create multiple schedules with overlap validation
+export async function createMultipleSchedulesApi(dto: CreateMultipleSchedulesDto): Promise<Schedule[]> {
+    const payload = {
+        schedules: dto.schedules.map(schedule => ({
+            ...schedule,
+            day: schedule.day?.toISOString(),
+        }))
+    };
+    const response = await api.post('api/v1/schedule/create-multiple', payload);
     return response.data;
 }

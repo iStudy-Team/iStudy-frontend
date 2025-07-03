@@ -12,6 +12,10 @@ import {
     getSchedulesByClassOrDayApi,
     getSchedulesByMultipleClassesApi,
     getSchedulesByStudentApi,
+    deleteScheduleApi,
+    deleteScheduleWithSessionsApi,
+    deleteMultipleSchedulesApi,
+    createMultipleSchedulesApi,
 } from '@/api/schedule';
 
 interface ScheduleState {
@@ -40,6 +44,10 @@ interface ScheduleState {
     getSchedulesByClassOrDay: (dto: GetScheduleDto) => Promise<void>;
     getSchedulesByMultipleClasses: (dto: GetScheduleByMultipleClassDto) => Promise<void>;
     getSchedulesByStudent: () => Promise<void>;
+    deleteSchedule: (id: string) => Promise<boolean>;
+    deleteScheduleWithSessions: (id: string) => Promise<boolean>;
+    deleteMultipleSchedules: (scheduleIds: string[]) => Promise<boolean>;
+    createMultipleSchedules: (schedules: ScheduleCredentials[]) => Promise<Schedule[] | null>;
     clearError: () => void;
     reset: () => void;
 }
@@ -219,6 +227,108 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
                 loading: false,
             });
             toast.error(errorMessage);
+        }
+    },
+
+    deleteSchedule: async (id) => {
+        set({ loading: true, error: null });
+        try {
+            await deleteScheduleApi(id);
+            const { schedules } = get();
+            const filteredSchedules = schedules.filter(
+                (schedule) => schedule.id !== id
+            );
+            set({
+                schedules: filteredSchedules,
+                loading: false,
+            });
+            toast.success('Schedule deleted successfully');
+            return true;
+        } catch (error) {
+            const errorMessage =
+                (error as Error).message || 'Failed to delete schedule';
+            set({
+                error: errorMessage,
+                loading: false,
+            });
+            toast.error(errorMessage);
+            return false;
+        }
+    },
+
+    deleteScheduleWithSessions: async (id) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await deleteScheduleWithSessionsApi(id);
+            const { schedules } = get();
+            const filteredSchedules = schedules.filter(
+                (schedule) => schedule.id !== id
+            );
+            set({
+                schedules: filteredSchedules,
+                loading: false,
+            });
+            toast.success(`Schedule and ${response.deletedSessionsCount} sessions deleted successfully`);
+            return true;
+        } catch (error) {
+            const errorMessage =
+                (error as Error).message || 'Failed to delete schedule with sessions';
+            set({
+                error: errorMessage,
+                loading: false,
+            });
+            toast.error(errorMessage);
+            return false;
+        }
+    },
+
+    deleteMultipleSchedules: async (scheduleIds) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await deleteMultipleSchedulesApi({ scheduleIds });
+            const { schedules } = get();
+            const filteredSchedules = schedules.filter(
+                (schedule) => !scheduleIds.includes(schedule.id)
+            );
+            set({
+                schedules: filteredSchedules,
+                loading: false,
+            });
+            toast.success(`${response.deletedCount} schedules deleted successfully`);
+            return true;
+        } catch (error) {
+            const errorMessage =
+                (error as Error).message || 'Failed to delete multiple schedules';
+            set({
+                error: errorMessage,
+                loading: false,
+            });
+            toast.error(errorMessage);
+            return false;
+        }
+    },
+
+    createMultipleSchedules: async (schedules) => {
+        set({ loading: true, error: null });
+        try {
+            const newSchedules = await createMultipleSchedulesApi({ schedules });
+            const { schedules: currentSchedules } = get();
+            const currentSchedulesList = Array.isArray(currentSchedules) ? currentSchedules : [];
+            set({
+                schedules: [...newSchedules, ...currentSchedulesList],
+                loading: false,
+            });
+            toast.success(`${newSchedules.length} schedules created successfully`);
+            return newSchedules;
+        } catch (error) {
+            const errorMessage =
+                (error as Error).message || 'Failed to create multiple schedules';
+            set({
+                error: errorMessage,
+                loading: false,
+            });
+            toast.error(errorMessage);
+            return null;
         }
     },
 
