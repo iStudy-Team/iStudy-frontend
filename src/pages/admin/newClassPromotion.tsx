@@ -1,68 +1,102 @@
-import { useState } from 'react';
-import {
-    Plus,
-    Image,
-    Film,
-    X,
-    Save,
-    Calendar,
-    Clock,
-    DollarSign,
-    Users,
-    BookOpen,
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useClassPromotionStore } from '@/store/useClassPromotionStore';
+import { useGradeStore } from '@/store/useGradeStore';
+import { ClassPromotionStatus, ClassPromotion } from '@/api/classPromotion';
+import { DialogCreateClassPromotion } from '@/components/dialogCreateClassPromotion';
 
 const NewClassPromotionAdmin = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [promotions, setPromotions] = useState([]);
-    const [currentPromo, setCurrentPromo] = useState({
-        title: '',
-        description: '',
-        image: null,
-        startDate: '',
-        endDate: '',
-        classInfo: {
-            name: '',
-            subject: '',
-            teacher: '',
-            schedule: '',
-            fee: '',
-            capacity: '',
-        },
-        isActive: true,
-    });
+    const [editingPromotion, setEditingPromotion] =
+        useState<ClassPromotion | null>(null);
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setCurrentPromo({ ...currentPromo, image: reader.result });
-            };
-            reader.readAsDataURL(file);
+    const {
+        classPromotions,
+        loading,
+        deleteClassPromotion,
+        getAllClassPromotions,
+    } = useClassPromotionStore();
+
+    const { grades, fetchGrades } = useGradeStore();
+
+    // Fetch data on component mount
+    useEffect(() => {
+        getAllClassPromotions();
+        fetchGrades();
+    }, [getAllClassPromotions, fetchGrades]);
+
+    const handleEdit = (promotion: ClassPromotion) => {
+        setEditingPromotion(promotion);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm('Bạn có chắc chắn muốn xóa quảng cáo này?')) {
+            await deleteClassPromotion(id);
+            getAllClassPromotions(); // Refresh the list
         }
     };
 
-    const savePromotion = () => {
-        setPromotions([...promotions, currentPromo]);
-        setCurrentPromo({
-            title: '',
-            description: '',
-            image: null,
-            startDate: '',
-            endDate: '',
-            classInfo: {
-                name: '',
-                subject: '',
-                teacher: '',
-                schedule: '',
-                fee: '',
-                capacity: '',
-            },
-            isActive: true,
-        });
-        setIsOpen(false);
+    const handleDialogClose = () => {
+        setEditingPromotion(null);
+        getAllClassPromotions(); // Refresh the list
     };
+
+    const getStatusText = (status: ClassPromotionStatus) => {
+        switch (status) {
+            case ClassPromotionStatus.PLANNED:
+                return 'Đang lên kế hoạch';
+            case ClassPromotionStatus.ACTIVE:
+                return 'Đang hoạt động';
+            case ClassPromotionStatus.COMPLETED:
+                return 'Đã hoàn thành';
+            case ClassPromotionStatus.CANCELED:
+                return 'Đã hủy';
+            default:
+                return 'Không xác định';
+        }
+    };
+
+    const getStatusVariant = (status: ClassPromotionStatus) => {
+        switch (status) {
+            case ClassPromotionStatus.PLANNED:
+                return 'secondary';
+            case ClassPromotionStatus.ACTIVE:
+                return 'default';
+            case ClassPromotionStatus.COMPLETED:
+                return 'outline';
+            case ClassPromotionStatus.CANCELED:
+                return 'destructive';
+            default:
+                return 'secondary';
+        }
+    };
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+        }).format(amount);
+    };
+
+    const formatDate = (dateString: string | Date | null | undefined) => {
+        if (!dateString) return 'Chưa xác định';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
+    };
+
+    const getGradeName = (gradeId: string) => {
+        const grade = grades.find((g) => g.id === gradeId);
+        return grade?.name || 'Không xác định';
+    };
+
+    if (loading) {
+        return (
+            <div className="p-6 flex justify-center items-center">
+                <div className="text-lg">Đang tải...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6">
@@ -70,388 +104,169 @@ const NewClassPromotionAdmin = () => {
                 <h1 className="text-2xl font-bold">
                     Quản lý quảng cáo lớp mới
                 </h1>
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+                <DialogCreateClassPromotion
+                    editingPromotion={null}
+                    onClose={handleDialogClose}
                 >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Thêm quảng cáo mới
-                </button>
+                    <Button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                        <Plus className="w-5 h-5 mr-2" />
+                        Thêm quảng cáo mới
+                    </Button>
+                </DialogCreateClassPromotion>
             </div>
 
             {/* Danh sách quảng cáo hiện có */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {promotions.map((promo, index) => (
-                    <div
-                        key={index}
-                        className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
+            {classPromotions.length === 0 ? (
+                <div className="text-center py-12">
+                    <div className="text-gray-500 text-lg mb-4">
+                        Chưa có quảng cáo nào
+                    </div>
+                    <DialogCreateClassPromotion
+                        editingPromotion={null}
+                        onClose={handleDialogClose}
                     >
-                        {promo.image && (
-                            <div className="h-48 overflow-hidden">
-                                <img
-                                    src={promo.image}
-                                    alt={promo.title}
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                        )}
-                        <div className="p-4">
-                            <h3 className="font-bold text-lg mb-2">
-                                {promo.title}
-                            </h3>
-                            <p className="text-gray-600 text-sm mb-4">
-                                {promo.description}
-                            </p>
-
-                            <div className="flex items-center justify-between">
-                                <span
-                                    className={`px-2 py-1 text-xs rounded-full ${
-                                        promo.isActive
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-gray-100 text-gray-800'
-                                    }`}
-                                >
-                                    {promo.isActive
-                                        ? 'Đang hiển thị'
-                                        : 'Đã tắt'}
-                                </span>
-                                <button className="text-red-600 hover:text-red-800">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Modal thêm quảng cáo mới */}
-            {isOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <div className="p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold">
-                                    Thêm quảng cáo lớp mới
-                                </h2>
-                                <button
-                                    onClick={() => setIsOpen(false)}
-                                    className="text-gray-500 hover:text-gray-700"
-                                >
-                                    <X className="w-6 h-6" />
-                                </button>
-                            </div>
-
-                            <div className="space-y-6">
-                                {/* Thông tin quảng cáo */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Tiêu đề quảng cáo*
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={currentPromo.title}
-                                        onChange={(e) =>
-                                            setCurrentPromo({
-                                                ...currentPromo,
-                                                title: e.target.value,
-                                            })
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                        placeholder="Ví dụ: Khai giảng lớp Toán 6 - Giáo viên kinh nghiệm"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Mô tả ngắn*
-                                    </label>
-                                    <textarea
-                                        value={currentPromo.description}
-                                        onChange={(e) =>
-                                            setCurrentPromo({
-                                                ...currentPromo,
-                                                description: e.target.value,
-                                            })
-                                        }
-                                        rows={3}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                        placeholder="Mô tả hấp dẫn về lớp học mới..."
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Hình ảnh quảng cáo*
-                                    </label>
-                                    <div className="flex items-center space-x-4">
-                                        {currentPromo.image ? (
-                                            <div className="relative">
-                                                <img
-                                                    src={currentPromo.image}
-                                                    alt="Preview"
-                                                    className="h-32 rounded-lg object-cover"
-                                                />
-                                                <button
-                                                    onClick={() =>
-                                                        setCurrentPromo({
-                                                            ...currentPromo,
-                                                            image: null,
-                                                        })
-                                                    }
-                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                    <Image className="w-8 h-8 text-gray-400 mb-2" />
-                                                    <p className="text-sm text-gray-500">
-                                                        Tải lên hình ảnh
-                                                    </p>
-                                                </div>
-                                                <input
-                                                    type="file"
-                                                    className="hidden"
-                                                    accept="image/*"
-                                                    onChange={handleImageUpload}
-                                                />
-                                            </label>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Thông tin lớp học */}
-                                <div className="border-t border-gray-200 pt-6">
-                                    <h3 className="font-medium text-lg mb-4 flex items-center">
-                                        <BookOpen className="w-5 h-5 mr-2 text-blue-600" />
-                                        Thông tin lớp học
-                                    </h3>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Tên lớp*
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={
-                                                    currentPromo.classInfo.name
-                                                }
-                                                onChange={(e) =>
-                                                    setCurrentPromo({
-                                                        ...currentPromo,
-                                                        classInfo: {
-                                                            ...currentPromo.classInfo,
-                                                            name: e.target
-                                                                .value,
-                                                        },
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                placeholder="Ví dụ: Toán nâng cao 6"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Môn học*
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={
-                                                    currentPromo.classInfo
-                                                        .subject
-                                                }
-                                                onChange={(e) =>
-                                                    setCurrentPromo({
-                                                        ...currentPromo,
-                                                        classInfo: {
-                                                            ...currentPromo.classInfo,
-                                                            subject:
-                                                                e.target.value,
-                                                        },
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                placeholder="Ví dụ: Toán học"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Giáo viên*
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={
-                                                    currentPromo.classInfo
-                                                        .teacher
-                                                }
-                                                onChange={(e) =>
-                                                    setCurrentPromo({
-                                                        ...currentPromo,
-                                                        classInfo: {
-                                                            ...currentPromo.classInfo,
-                                                            teacher:
-                                                                e.target.value,
-                                                        },
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                placeholder="Ví dụ: Cô Nguyễn Thị A"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Lịch học*
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={
-                                                    currentPromo.classInfo
-                                                        .schedule
-                                                }
-                                                onChange={(e) =>
-                                                    setCurrentPromo({
-                                                        ...currentPromo,
-                                                        classInfo: {
-                                                            ...currentPromo.classInfo,
-                                                            schedule:
-                                                                e.target.value,
-                                                        },
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                placeholder="Ví dụ: Thứ 3,5,7 từ 18h-19h30"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Học phí*
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    value={
-                                                        currentPromo.classInfo
-                                                            .fee
-                                                    }
-                                                    onChange={(e) =>
-                                                        setCurrentPromo({
-                                                            ...currentPromo,
-                                                            classInfo: {
-                                                                ...currentPromo.classInfo,
-                                                                fee: e.target
-                                                                    .value,
-                                                            },
-                                                        })
-                                                    }
-                                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg"
-                                                    placeholder="Ví dụ: 500,000 VNĐ/tháng"
-                                                />
-                                                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Sĩ số tối đa*
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    value={
-                                                        currentPromo.classInfo
-                                                            .capacity
-                                                    }
-                                                    onChange={(e) =>
-                                                        setCurrentPromo({
-                                                            ...currentPromo,
-                                                            classInfo: {
-                                                                ...currentPromo.classInfo,
-                                                                capacity:
-                                                                    e.target
-                                                                        .value,
-                                                            },
-                                                        })
-                                                    }
-                                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg"
-                                                    placeholder="Ví dụ: 20 học sinh"
-                                                />
-                                                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Thời gian hiển thị */}
-                                <div className="border-t border-gray-200 pt-6">
-                                    <h3 className="font-medium text-lg mb-4 flex items-center">
-                                        <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                                        Thời gian hiển thị
-                                    </h3>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Ngày bắt đầu*
-                                            </label>
-                                            <input
-                                                type="date"
-                                                value={currentPromo.startDate}
-                                                onChange={(e) =>
-                                                    setCurrentPromo({
-                                                        ...currentPromo,
-                                                        startDate:
-                                                            e.target.value,
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Ngày kết thúc*
-                                            </label>
-                                            <input
-                                                type="date"
-                                                value={currentPromo.endDate}
-                                                onChange={(e) =>
-                                                    setCurrentPromo({
-                                                        ...currentPromo,
-                                                        endDate: e.target.value,
-                                                    })
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                                    <button
-                                        onClick={() => setIsOpen(false)}
-                                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                                    >
-                                        Hủy bỏ
-                                    </button>
-                                    <button
-                                        onClick={savePromotion}
-                                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                    >
-                                        <Save className="w-5 h-5 mr-2" />
-                                        Lưu quảng cáo
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                            Tạo quảng cáo đầu tiên
+                        </Button>
+                    </DialogCreateClassPromotion>
                 </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {classPromotions.map((promotion) => (
+                        <div
+                            key={promotion.id}
+                            className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
+                        >
+                            <div className="p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <h3 className="font-bold text-lg line-clamp-2">
+                                        {promotion.title}
+                                    </h3>
+                                    <div className="flex space-x-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                handleEdit(promotion)
+                                            }
+                                            className="cursor-pointer"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() =>
+                                                handleDelete(promotion.id)
+                                            }
+                                            className="cursor-pointer"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {promotion.description && (
+                                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                                        {promotion.description}
+                                    </p>
+                                )}
+
+                                <div className="space-y-2 mb-4">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">
+                                            Khối lớp:
+                                        </span>
+                                        <span className="font-medium">
+                                            {getGradeName(
+                                                promotion.grade_level_id
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">
+                                            Học phí:
+                                        </span>
+                                        <span className="font-medium">
+                                            {formatCurrency(
+                                                promotion.tuition_fee
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">
+                                            Sĩ số:
+                                        </span>
+                                        <span className="font-medium">
+                                            {promotion.max_students ||
+                                                'Không giới hạn'}
+                                        </span>
+                                    </div>
+                                    {promotion.discount_offered &&
+                                        promotion.discount_offered > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-500">
+                                                    Giảm giá:
+                                                </span>
+                                                <span className="font-medium text-red-500">
+                                                    {promotion.discount_offered}
+                                                    %
+                                                </span>
+                                            </div>
+                                        )}
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">
+                                            Khai giảng:
+                                        </span>
+                                        <span className="font-medium">
+                                            {formatDate(
+                                                promotion.planned_start_date
+                                            )}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <Badge
+                                        variant={
+                                            getStatusVariant(
+                                                promotion.status
+                                            ) as
+                                                | 'default'
+                                                | 'secondary'
+                                                | 'destructive'
+                                                | 'outline'
+                                        }
+                                    >
+                                        {getStatusText(promotion.status)}
+                                    </Badge>
+                                    {promotion.promotion_start &&
+                                        promotion.promotion_end && (
+                                            <div className="text-xs text-gray-500">
+                                                {formatDate(
+                                                    promotion.promotion_start
+                                                )}{' '}
+                                                -{' '}
+                                                {formatDate(
+                                                    promotion.promotion_end
+                                                )}
+                                            </div>
+                                        )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Dialog for editing */}
+            {editingPromotion && (
+                <DialogCreateClassPromotion
+                    editingPromotion={editingPromotion}
+                    onClose={handleDialogClose}
+                >
+                    <div></div>
+                </DialogCreateClassPromotion>
             )}
         </div>
     );
