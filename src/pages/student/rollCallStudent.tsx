@@ -1,45 +1,27 @@
-import {
-    Calendar,
-    Check,
-    X,
-    BookOpen,
-    Clock,
-    Percent,
-    User,
-} from 'lucide-react';
+import { Check, X, BookOpen, Percent } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { useClassSessionStore } from '@/store/useClassSessionStore';
+import { useEffect } from 'react';
+import { LOCALSTORAGE_KEY } from '@/types/localstorage';
+import { useAttendanceStore } from '@/store/useAttendanceStore';
 
 export default function RollCallStudent() {
-    // Dữ liệu mẫu
-    const attendanceData = {
-        totalSessions: 30,
-        attended: 25,
-        absent: 5,
-        attendanceRate: 83.3,
-        recentSessions: [
-            { date: '2025-10-15', status: 'attended', subject: 'Toán' },
-            {
-                date: '2023-10-14',
-                status: 'absent',
-                subject: 'Văn',
-                reason: 'Bị ốm',
-            },
-            { date: '2025-10-12', status: 'attended', subject: 'Anh' },
-            { date: '2023-10-10', status: 'attended', subject: 'Lý' },
-            {
-                date: '2025-10-08',
-                status: 'absent',
-                subject: 'Hóa',
-                reason: 'Gia đình có việc',
-            },
-        ],
-    };
+    // Lấy thông tin người dùng từ localStorage
+    const user = JSON.parse(
+        localStorage.getItem(LOCALSTORAGE_KEY.USER) || '{}'
+    );
+    const { getAllAttendance, attendances } = useAttendanceStore();
+    const { getAllClassSessions, classSessions } = useClassSessionStore();
+
+    useEffect(() => {
+        getAllClassSessions();
+        getAllAttendance();
+    }, [getAllClassSessions, getAllAttendance]);
 
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex items-center gap-4 mb-8">
-                <User className="w-8 h-8" />
                 <h1 className="text-3xl font-bold">Thông tin điểm danh</h1>
             </div>
 
@@ -54,7 +36,15 @@ export default function RollCallStudent() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {attendanceData.totalSessions}
+                            {
+                                classSessions.filter((item) =>
+                                    item.class?.class_enrollments?.map(
+                                        (enrollment) =>
+                                            enrollment.student.user_id ===
+                                            user.id
+                                    )
+                                ).length
+                            }
                         </div>
                         <p className="text-xs text-gray-500">Buổi</p>
                     </CardContent>
@@ -70,7 +60,13 @@ export default function RollCallStudent() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-green-600">
-                            {attendanceData.attended}
+                            {
+                                attendances.filter(
+                                    (item) =>
+                                        item.student?.user_id === user.id &&
+                                        (item.status === 0 || item.status === 2)
+                                ).length
+                            }
                         </div>
                         <p className="text-xs text-gray-500">Buổi</p>
                     </CardContent>
@@ -86,7 +82,13 @@ export default function RollCallStudent() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">
-                            {attendanceData.absent}
+                            {
+                                attendances.filter(
+                                    (item) =>
+                                        item.student?.user_id === user.id &&
+                                        (item.status === 1 || item.status === 3)
+                                ).length
+                            }
                         </div>
                         <p className="text-xs text-gray-500">Buổi</p>
                     </CardContent>
@@ -104,68 +106,60 @@ export default function RollCallStudent() {
                 <CardContent>
                     <div className="flex items-center gap-4">
                         <Progress
-                            value={attendanceData.attendanceRate}
+                            value={
+                                (attendances.filter(
+                                    (item) =>
+                                        item.student?.user_id === user.id &&
+                                        (item.status === 0 || item.status === 2)
+                                ).length /
+                                    classSessions.filter((item) =>
+                                        item.class?.class_enrollments?.map(
+                                            (enrollment) =>
+                                                enrollment.student.user_id ===
+                                                user.id
+                                        )
+                                    ).length) *
+                                100
+                            }
                             className="h-3"
                         />
                         <span className="font-medium">
-                            {attendanceData.attendanceRate}%
+                            {(attendances.filter(
+                                (item) =>
+                                    item.student?.user_id === user.id &&
+                                    (item.status === 0 || item.status === 2)
+                            ).length /
+                                classSessions.filter((item) =>
+                                    item.class?.class_enrollments?.map(
+                                        (enrollment) =>
+                                            enrollment.student.user_id ===
+                                            user.id
+                                    )
+                                ).length) *
+                                100}
+                            %
                         </span>
                     </div>
                     <p className="text-sm text-gray-500 mt-2">
-                        Đạt {attendanceData.attended}/
-                        {attendanceData.totalSessions} buổi
+                        Đạt{' '}
+                        {
+                            attendances.filter(
+                                (item) =>
+                                    item.student?.user_id === user.id &&
+                                    (item.status === 0 || item.status === 2)
+                            ).length
+                        }
+                        /
+                        {
+                            classSessions.filter((item) =>
+                                item.class?.class_enrollments?.map(
+                                    (enrollment) =>
+                                        enrollment.student.user_id === user.id
+                                )
+                            ).length
+                        }{' '}
+                        buổi
                     </p>
-                </CardContent>
-            </Card>
-
-            {/* Lịch sử điểm danh */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5" />
-                        Lịch sử điểm danh gần đây
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {attendanceData.recentSessions.map((session, index) => (
-                            <div
-                                key={index}
-                                className="flex items-start p-4 border rounded-lg"
-                            >
-                                <div
-                                    className={`p-2 rounded-full mr-4 ${
-                                        session.status === 'attended'
-                                            ? 'bg-green-100 text-green-600'
-                                            : 'bg-red-100 text-red-600'
-                                    }`}
-                                >
-                                    {session.status === 'attended' ? (
-                                        <Check className="w-4 h-4" />
-                                    ) : (
-                                        <X className="w-4 h-4" />
-                                    )}
-                                </div>
-                                <div className="flex-1">
-                                    <div className="font-medium">
-                                        {session.subject}
-                                    </div>
-                                    <div className="text-sm text-gray-500 flex items-center gap-2">
-                                        <Clock className="w-3 h-3" />
-                                        {new Date(
-                                            session.date
-                                        ).toLocaleDateString('vi-VN')}
-                                    </div>
-                                    {session.status === 'absent' &&
-                                        session.reason && (
-                                            <div className="text-sm text-gray-500 mt-1">
-                                                Lý do: {session.reason}
-                                            </div>
-                                        )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
                 </CardContent>
             </Card>
         </div>

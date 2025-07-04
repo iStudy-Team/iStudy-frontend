@@ -168,7 +168,9 @@ export const useClassSessionStore = create<ClassSessionState>((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await getAllClassSessionsApi(dto);
-            const classSessions = Array.isArray(response.data) ? response.data : [];
+            console.log('Fetched class sessions:', response);
+            const classSessions = Array.isArray(response) ? response : [];
+
             set({
                 classSessions,
                 pagination: {

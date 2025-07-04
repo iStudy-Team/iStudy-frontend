@@ -178,7 +178,7 @@ export const useAttendanceStore = create<AttendanceState>((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await getAllAttendanceApi(dto);
-            const attendances = Array.isArray(response.data) ? response.data : [];
+            const attendances = Array.isArray(response) ? response : [];
             set({
                 attendances,
                 pagination: {

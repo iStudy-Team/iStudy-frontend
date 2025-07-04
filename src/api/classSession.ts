@@ -21,6 +21,7 @@ export interface ClassSession {
             student: {
                 id: string;
                 full_name: string;
+                user_id: string;
                 user?: {
                     email: string;
                     phone: string;
