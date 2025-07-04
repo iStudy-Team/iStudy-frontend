@@ -1,5 +1,5 @@
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
-
 import {
     ArrowLeft,
     CheckCircle,
@@ -10,34 +10,79 @@ import {
     Search,
     XCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useClassStore } from '@/store/useClassStore';
+import { useClassSessionStore } from '@/store/useClassSessionStore';
+import { getStudentsByClassIdApi } from '@/api/classEnrollment';
+
+interface ClassStudent {
+    id: string;
+    full_name: string;
+    date_of_birth?: string;
+    gender?: string;
+    address?: string;
+    user?: {
+        id: string;
+        email: string;
+        phone: string;
+        avatar?: string;
+    };
+}
+
 export default function RollClassSummary() {
-    const params = { id: '1' };
-    const classData = CLASSES.find((item) => item.id === params.id);
-    const [students, setStudents] = useState(STUDENTS);
+    const { classId } = useParams({
+        from: '/teacher/rollcall-summary/$classId',
+    });
+    const [students, setStudents] = useState<ClassStudent[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
-    const updateAttendance = (studentId, status) => {
-        setStudents((prev) =>
-            prev.map((student) =>
-                student.id === studentId
-                    ? { ...student, attendance: status }
-                    : student
-            )
+    const [loadingStudents, setLoadingStudents] = useState(true);
+
+    const {
+        currentClass,
+        getClassById,
+        loading: classLoading,
+    } = useClassStore();
+    const { getClassSessionsByClass } = useClassSessionStore();
+
+    const fetchStudents = useCallback(async () => {
+        if (!classId) return;
+
+        try {
+            setLoadingStudents(true);
+            const response = await getStudentsByClassIdApi(classId);
+            setStudents(response.data);
+        } catch (error) {
+            console.error('Error fetching students:', error);
+            setStudents([]);
+        } finally {
+            setLoadingStudents(false);
+        }
+    }, [classId]);
+
+    useEffect(() => {
+        if (classId) {
+            getClassById(classId);
+            getClassSessionsByClass(classId);
+            fetchStudents();
+        }
+    }, [classId, getClassById, getClassSessionsByClass, fetchStudents]);
+
+    const updateAttendance = (studentId: string, status: string) => {
+        // This would need to be implemented with actual API calls
+        console.log(
+            'Update attendance for student:',
+            studentId,
+            'status:',
+            status
         );
     };
-    const getAttendanceStats = (classId: string) => {
-        const classStudents = STUDENTS.filter((s) => s.classId === classId);
-        const present = classStudents.filter(
-            (s) => s.attendance === 'present'
-        ).length;
-        const absent = classStudents.filter(
-            (s) => s.attendance === 'absent'
-        ).length;
-        const late = classStudents.filter(
-            (s) => s.attendance === 'late'
-        ).length;
-        const total = classStudents.length;
+
+    const getAttendanceStats = () => {
+        const total = students.length;
+        // This would need to calculate based on actual attendance data
+        const present = 0; // Calculate from attendances
+        const absent = 0; // Calculate from attendances
+        const late = 0; // Calculate from attendances
 
         return {
             present,
@@ -47,15 +92,52 @@ export default function RollClassSummary() {
             presentRate: total > 0 ? Math.round((present / total) * 100) : 0,
         };
     };
+
+    // Filter students based on search term and filter status
+    const filteredStudents = students.filter((student) => {
+        const matchesSearch = student.full_name
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
+
+        // For now, show all students since we don't have attendance data
+        const matchesFilter = filterStatus === 'all' || true;
+
+        return matchesSearch && matchesFilter;
+    });
+
+    if (classLoading || loadingStudents) {
+        return (
+            <div className="container mx-auto p-6">
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-lg">Đang tải thông tin lớp học...</div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!currentClass) {
+        return (
+            <div className="container mx-auto p-6">
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-lg text-red-600">
+                        Không tìm thấy lớp học
+                    </div>
+                </div>
+            </div>
+        );
+    }
     return (
-        <div>
+        <div className="container mx-auto p-6">
             {/* Class header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 space-y-4 md:space-y-0">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                        {classData?.name}
+                        {currentClass?.name}
                     </h2>
-                    <p className="text-gray-600">{classData?.teacher} </p>
+                    <p className="text-gray-600">
+                        {currentClass?.grade_level?.name} •{' '}
+                        {currentClass?.academic_year?.school_year}
+                    </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
                     <button className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
@@ -101,7 +183,7 @@ export default function RollClassSummary() {
             {/* Attendance summary */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 {(() => {
-                    const stats = getAttendanceStats(classData?.id || '');
+                    const stats = getAttendanceStats();
                     return (
                         <>
                             <div className="bg-blue-50 rounded-lg p-4 text-center">
@@ -141,9 +223,9 @@ export default function RollClassSummary() {
 
             {/* Students list */}
             <div className="space-y-3">
-                {STUDENTS.map(
-                    (student, index) =>
-                        student.classId === classData?.id && (
+                {filteredStudents.length > 0 ? (
+                    filteredStudents.map(
+                        (student: ClassStudent, index: number) => (
                             <div
                                 key={student.id}
                                 className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow"
@@ -156,10 +238,11 @@ export default function RollClassSummary() {
                                     </div>
                                     <div>
                                         <span className="font-medium text-gray-800">
-                                            {student.name}
+                                            {student.full_name}
                                         </span>
                                         <div className="text-sm text-gray-500">
-                                            {student.phone}
+                                            {student.user?.phone ||
+                                                student.user?.email}
                                         </div>
                                     </div>
                                 </div>
@@ -170,9 +253,6 @@ export default function RollClassSummary() {
                                             type="radio"
                                             name={`attendance-${student.id}`}
                                             className="form-radio h-4 w-4 text-green-500"
-                                            checked={
-                                                student.attendance === 'present'
-                                            }
                                             onChange={() =>
                                                 updateAttendance(
                                                     student.id,
@@ -191,9 +271,6 @@ export default function RollClassSummary() {
                                             type="radio"
                                             name={`attendance-${student.id}`}
                                             className="form-radio h-4 w-4 text-yellow-500"
-                                            checked={
-                                                student.attendance === 'late'
-                                            }
                                             onChange={() =>
                                                 updateAttendance(
                                                     student.id,
@@ -212,9 +289,6 @@ export default function RollClassSummary() {
                                             type="radio"
                                             name={`attendance-${student.id}`}
                                             className="form-radio h-4 w-4 text-red-500"
-                                            checked={
-                                                student.attendance === 'absent'
-                                            }
                                             onChange={() =>
                                                 updateAttendance(
                                                     student.id,
@@ -230,6 +304,15 @@ export default function RollClassSummary() {
                                 </div>
                             </div>
                         )
+                    )
+                ) : (
+                    <div className="text-center py-8">
+                        <p className="text-gray-500">
+                            {searchTerm
+                                ? 'Không tìm thấy học sinh nào phù hợp với tìm kiếm.'
+                                : 'Không có học sinh nào trong lớp này.'}
+                        </p>
+                    </div>
                 )}
             </div>
 

@@ -4,6 +4,7 @@ import { Academic } from './academic';
 import { Student } from './student';
 import { Teacher } from './teacher';
 import { Schedule } from './schedule';
+import { ClassSession } from './classSession';
 
 export enum ClassStatus {
     OPEN = 0,
@@ -93,6 +94,7 @@ export interface Class {
     schedule?: Schedule[]; // Will be populated by getSchedulesByClassOrDay
     class_teachers?: ClassTeacher[];
     class_enrollments?: ClassEnrollment[];
+    class_sessions?: ClassSession[];
 }
 
 export type ClassCredentials = Pick<

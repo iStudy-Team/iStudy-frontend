@@ -153,22 +153,15 @@ export async function getStudentsByClassIdApi(
 ): Promise<{
     data: Array<{
         id: string;
-        enrollment: ClassEnrollment;
-        student: {
+        full_name: string;
+        date_of_birth?: string;
+        gender?: string;
+        address?: string;
+        user?: {
             id: string;
-            user_id: string;
-            full_name: string;
-            gender: number;
-            date_of_birth?: Date;
-            address?: string;
-            enrollment_date?: Date;
-            status: number;
-            user?: {
-                id: string;
-                email: string;
-                phone?: string;
-                avatar?: string;
-            };
+            email: string;
+            phone: string;
+            avatar?: string;
         };
     }>;
     total: number;

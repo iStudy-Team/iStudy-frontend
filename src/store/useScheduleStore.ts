@@ -12,6 +12,7 @@ import {
     getSchedulesByClassOrDayApi,
     getSchedulesByMultipleClassesApi,
     getSchedulesByStudentApi,
+    getSchedulesByTeacherApi,
     deleteScheduleApi,
     deleteScheduleWithSessionsApi,
     deleteMultipleSchedulesApi,
@@ -44,6 +45,7 @@ interface ScheduleState {
     getSchedulesByClassOrDay: (dto: GetScheduleDto) => Promise<void>;
     getSchedulesByMultipleClasses: (dto: GetScheduleByMultipleClassDto) => Promise<void>;
     getSchedulesByStudent: () => Promise<void>;
+    getSchedulesByTeacher: () => Promise<void>;
     deleteSchedule: (id: string) => Promise<boolean>;
     deleteScheduleWithSessions: (id: string) => Promise<boolean>;
     deleteMultipleSchedules: (scheduleIds: string[]) => Promise<boolean>;
@@ -222,6 +224,32 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         } catch (error) {
             const errorMessage =
                 (error as Error).message || 'Failed to fetch student schedules';
+            set({
+                error: errorMessage,
+                loading: false,
+            });
+            toast.error(errorMessage);
+        }
+    },
+
+    getSchedulesByTeacher: async () => {
+        set({ loading: true, error: null });
+        try {
+            const response = await getSchedulesByTeacherApi();
+            const schedules = Array.isArray(response) ? response : [];
+            set({
+                schedules,
+                pagination: {
+                    page: 1,
+                    limit: schedules.length,
+                    total: schedules.length,
+                    totalPages: 1,
+                },
+                loading: false,
+            });
+        } catch (error) {
+            const errorMessage =
+                (error as Error).message || 'Failed to fetch teacher schedules';
             set({
                 error: errorMessage,
                 loading: false,

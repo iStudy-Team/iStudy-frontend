@@ -8,46 +8,39 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Calendar, Clock, Users, TrendingUp, Search, Plus } from 'lucide-react';
 import { useClassStore } from '@/store/useClassStore';
 import { useClassSessionStore } from '@/store/useClassSessionStore';
-import { useAttendanceStore } from '@/store/useAttendanceStore';
 import { ClassStatus } from '@/api/class';
 
 const RollCall = () => {
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
-
     const { classes, getAllClasses, loading: classLoading } = useClassStore();
-    const { classSessions, getAllClassSessions } = useClassSessionStore();
-    const { stats } = useAttendanceStore();
+    const {
+        getAllClassSessions,
+        getTotalClassSessionsCount,
+        totalSessionsCount,
+    } = useClassSessionStore();
 
     useEffect(() => {
         getAllClasses();
         getAllClassSessions();
-    }, [getAllClasses, getAllClassSessions]);
+        getTotalClassSessionsCount();
+    }, [getAllClasses, getAllClassSessions, getTotalClassSessionsCount]);
 
     // Filter classes based on search term
-    const filteredClasses = classes.filter(
-        (cls) =>
-            cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (cls.grade_level?.name &&
-                cls.grade_level.name
-                    .toLowerCase()
-                    .includes(searchTerm.toLowerCase()))
-    );
-
-    const getClassSessionCount = (classId: string) => {
-        return classSessions.filter((session) => session.classId === classId)
-            .length;
-    };
-
-    const getAttendanceRate = () => {
-        if (!stats || !stats.totalSessions) return 0;
-        return Math.round(stats.attendanceRate);
-    };
+    const filteredClasses = classes
+        .filter((cls) => cls.status === ClassStatus.OPEN)
+        .filter(
+            (cls) =>
+                cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (cls.grade_level?.name &&
+                    cls.grade_level.name
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase()))
+        );
 
     const handleClassClick = (classId: string) => {
         navigate({ to: `/teacher/rollcall/${classId}` });
@@ -74,10 +67,10 @@ const RollCall = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">
-                        Roll Call Management
+                        Quản lý điểm danh
                     </h1>
                     <p className="text-gray-600 mt-1">
-                        Manage attendance for your classes
+                        Quản lý việc tham dự lớp học của bạn
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -98,7 +91,7 @@ const RollCall = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Classes
+                            Tổng số lớp học
                         </CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
@@ -112,13 +105,13 @@ const RollCall = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Sessions
+                            Tổng số phiên
                         </CardTitle>
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {classSessions.length}
+                            {totalSessionsCount}
                         </div>
                     </CardContent>
                 </Card>
@@ -126,7 +119,7 @@ const RollCall = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Active Classes
+                            Lớp học đang hoạt động
                         </CardTitle>
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
@@ -140,27 +133,11 @@ const RollCall = () => {
                         </div>
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Avg Attendance
-                        </CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {getAttendanceRate()}%
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
 
             {/* Classes Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredClasses.map((cls) => {
-                    const sessionCount = getClassSessionCount(cls.id);
-
                     return (
                         <Card
                             key={cls.id}
@@ -181,33 +158,22 @@ const RollCall = () => {
                                                 'No Academic Year'}
                                         </CardDescription>
                                     </div>
-                                    <Badge
-                                        variant={
-                                            cls.status === ClassStatus.OPEN
-                                                ? 'default'
-                                                : 'secondary'
-                                        }
-                                        className="capitalize"
-                                    >
-                                        {cls.status === ClassStatus.OPEN
-                                            ? 'Open'
-                                            : cls.status === ClassStatus.CLOSE
-                                              ? 'Closed'
-                                              : 'Completed'}
-                                    </Badge>
                                 </div>
                             </CardHeader>
 
                             <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="flex flex-col gap-4 text-sm">
                                     <div className="flex items-center gap-2">
                                         <Calendar className="h-4 w-4 text-gray-500" />
-                                        <span>{sessionCount} sessions</span>
+                                        <span>
+                                            {cls.class_sessions?.length} phiên
+                                            học
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Users className="h-4 w-4 text-gray-500" />
                                         <span>
-                                            {cls.capacity || 0} capacity
+                                            {cls.capacity || 0} học sinh
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -217,26 +183,20 @@ const RollCall = () => {
                                                 ? new Date(
                                                       cls.start_date
                                                   ).toLocaleDateString()
-                                                : 'No start date'}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <TrendingUp className="h-4 w-4 text-gray-500" />
-                                        <span>
-                                            {getAttendanceRate()}% attendance
+                                                : 'Không có ngày bắt đầu'}
                                         </span>
                                     </div>
                                 </div>
 
                                 <div className="flex gap-2">
                                     <Button
-                                        className="flex-1"
+                                        className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleClassClick(cls.id);
                                         }}
                                     >
-                                        View Roll Call
+                                        Điểm danh
                                     </Button>
                                     <Button
                                         variant="outline"

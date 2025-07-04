@@ -1,64 +1,80 @@
 import { api } from './api';
 
+export enum AttendanceStatus {
+    PRESENT = 0,
+    ABSENT = 1,
+    LATE = 2,
+    EXCUSED = 3,
+}
+
 export interface Attendance {
     id: string;
-    studentId: string;
-    classSessionId: string;
-    status: 'present' | 'absent' | 'late' | 'excused';
-    note?: string;
-    createdAt: string;
-    updatedAt: string;
+    student_id: string;
+    class_session_id: string;
+    status: number; // 0: Present, 1: Absent, 2: Late, 3: Excused
+    comment?: string;
+    recorded_by: string;
+    recorded_at: string;
     student?: {
         id: string;
-        name: string;
-        email: string;
-        phone?: string;
-        avatar?: string;
+        full_name: string;
+        user?: {
+            email: string;
+            phone: string;
+            avatar?: string;
+        };
     };
-    classSession?: {
+    class_session?: {
         id: string;
         date: string;
-        startTime: string;
-        endTime: string;
-        classId: string;
-        scheduleId: string;
+        start_time: string;
+        end_time: string;
+        class_id: string;
+        class?: {
+            id: string;
+            name: string;
+        };
+    };
+    teacher?: {
+        id: string;
+        full_name: string;
     };
 }
 
 export interface CreateAttendanceDto {
-    studentId: string;
-    classSessionId: string;
-    status: 'present' | 'absent' | 'late' | 'excused';
-    note?: string;
+    student_id: string;
+    class_session_id: string;
+    status: number;
+    comment?: string;
 }
 
 export interface UpdateAttendanceDto {
-    status?: 'present' | 'absent' | 'late' | 'excused';
-    note?: string;
+    status?: number;
+    comment?: string;
 }
 
 export interface BulkAttendanceDto {
-    classSessionId: string;
+    class_session_id: string;
     attendances: {
-        studentId: string;
-        status: 'present' | 'absent' | 'late' | 'excused';
-        note?: string;
+        student_id: string;
+        status: number;
+        comment?: string;
     }[];
 }
 
 export interface GetAttendanceDto {
     page?: number;
     limit?: number;
-    classSessionId?: string;
-    studentId?: string;
-    status?: 'present' | 'absent' | 'late' | 'excused';
+    class_session_id?: string;
+    student_id?: string;
+    status?: number;
     dateFrom?: string;
     dateTo?: string;
 }
 
 // Create attendance record
 export const createAttendanceApi = async (dto: CreateAttendanceDto): Promise<Attendance> => {
-    const response = await api.post('/attendance', dto);
+    const response = await api.post('/api/v1/attendance', dto);
     return response.data;
 };
 
@@ -67,13 +83,13 @@ export const updateAttendanceApi = async (
     id: string,
     dto: UpdateAttendanceDto
 ): Promise<Attendance> => {
-    const response = await api.put(`/attendance/${id}`, dto);
+    const response = await api.put(`/api/v1/attendance/${id}`, dto);
     return response.data;
 };
 
 // Get attendance by ID
 export const getAttendanceByIdApi = async (id: string): Promise<Attendance> => {
-    const response = await api.get(`/attendance/${id}`);
+    const response = await api.get(`/api/v1/attendance/${id}`);
     return response.data;
 };
 
@@ -88,13 +104,13 @@ export const getAllAttendanceApi = async (dto?: GetAttendanceDto): Promise<{
     const params = new URLSearchParams();
     if (dto?.page) params.append('page', dto.page.toString());
     if (dto?.limit) params.append('limit', dto.limit.toString());
-    if (dto?.classSessionId) params.append('classSessionId', dto.classSessionId);
-    if (dto?.studentId) params.append('studentId', dto.studentId);
-    if (dto?.status) params.append('status', dto.status);
+    if (dto?.class_session_id) params.append('classSessionId', dto.class_session_id);
+    if (dto?.student_id) params.append('studentId', dto.student_id);
+    if (dto?.status !== undefined) params.append('status', dto.status.toString());
     if (dto?.dateFrom) params.append('dateFrom', dto.dateFrom);
     if (dto?.dateTo) params.append('dateTo', dto.dateTo);
 
-    const response = await api.get(`/attendance?${params.toString()}`);
+    const response = await api.get(`/api/v1/attendance?${params.toString()}`);
     return response.data;
 };
 
@@ -102,43 +118,53 @@ export const getAllAttendanceApi = async (dto?: GetAttendanceDto): Promise<{
 export const getAttendanceByClassSessionApi = async (
     classSessionId: string
 ): Promise<Attendance[]> => {
-    const response = await api.get(`/attendance?classSessionId=${classSessionId}`);
-    return response.data.data || response.data;
+    const response = await api.get(`/api/v1/attendance/class-session/${classSessionId}`);
+    return response.data;
 };
 
 // Get attendance by student
 export const getAttendanceByStudentApi = async (
     studentId: string,
-    dto?: Omit<GetAttendanceDto, 'studentId'>
+    dto?: Omit<GetAttendanceDto, 'student_id'>
 ): Promise<Attendance[]> => {
     const params = new URLSearchParams();
     params.append('studentId', studentId);
     if (dto?.page) params.append('page', dto.page.toString());
     if (dto?.limit) params.append('limit', dto.limit.toString());
-    if (dto?.classSessionId) params.append('classSessionId', dto.classSessionId);
-    if (dto?.status) params.append('status', dto.status);
+    if (dto?.class_session_id) params.append('classSessionId', dto.class_session_id);
+    if (dto?.status !== undefined) params.append('status', dto.status.toString());
     if (dto?.dateFrom) params.append('dateFrom', dto.dateFrom);
     if (dto?.dateTo) params.append('dateTo', dto.dateTo);
 
-    const response = await api.get(`/attendance?${params.toString()}`);
+    const response = await api.get(`/api/v1/attendance?${params.toString()}`);
     return response.data.data || response.data;
 };
 
 // Create bulk attendance records
-export const createBulkAttendanceApi = async (dto: BulkAttendanceDto): Promise<Attendance[]> => {
-    const response = await api.post('/attendance/bulk', dto);
+export const createBulkAttendanceApi = async (
+    classSessionId: string,
+    attendances: Array<{
+        student_id: string;
+        status: number;
+        comment?: string;
+    }>
+): Promise<{
+    success: Attendance[];
+    errors: Array<{ student_id: string; error: string }>;
+}> => {
+    const response = await api.post(`/api/v1/attendance/bulk/${classSessionId}`, attendances);
     return response.data;
 };
 
 // Update bulk attendance records
 export const updateBulkAttendanceApi = async (dto: BulkAttendanceDto): Promise<Attendance[]> => {
-    const response = await api.put('/attendance/bulk', dto);
+    const response = await api.put('/api/v1/attendance/bulk', dto);
     return response.data;
 };
 
 // Delete attendance record
 export const deleteAttendanceApi = async (id: string): Promise<void> => {
-    await api.delete(`/attendance/${id}`);
+    await api.delete(`/api/v1/attendance/${id}`);
 };
 
 // Get attendance statistics
@@ -161,6 +187,6 @@ export const getAttendanceStatsApi = async (filters?: {
     if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
     if (filters?.dateTo) params.append('dateTo', filters.dateTo);
 
-    const response = await api.get(`/attendance/stats?${params.toString()}`);
+    const response = await api.get(`/api/v1/attendance/stats?${params.toString()}`);
     return response.data;
 };

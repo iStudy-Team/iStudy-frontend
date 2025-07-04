@@ -3,14 +3,34 @@ import { api } from './api';
 export interface Schedule {
     id: string;
     class_id: string;
-    day?: Date;
-    start_time?: Date,
-    end_time?: Date,
+    day?: Date | string;
+    start_time?: Date | string;
+    end_time?: Date | string;
     class_name?: string;
     teacher?: {
         id: string;
         full_name: string;
-    }[]
+    }[];
+    class?: {
+        id: string;
+        name: string;
+        class_teachers?: {
+            teacher: {
+                id: string;
+                full_name: string;
+            };
+        }[];
+        class_sessions?: {
+            topic?: string;
+            start_time: Date | string;
+            end_time: Date | string;
+            date: Date | string;
+            teacher?: {
+                id: string;
+                full_name: string;
+            };
+        }[];
+    };
 }
 
 export type ScheduleCredentials = Pick<
@@ -79,7 +99,7 @@ export interface DeleteMultipleSchedulesResponse {
 export async function createScheduleApi(dto: ScheduleCredentials): Promise<Schedule> {
     const payload = {
         ...dto,
-        day: dto.day?.toISOString(),
+        day: dto.day instanceof Date ? dto.day.toISOString() : dto.day,
     };
     const response = await api.post('api/v1/schedule', payload);
     return response.data;
@@ -89,7 +109,7 @@ export async function createScheduleApi(dto: ScheduleCredentials): Promise<Sched
 export async function updateScheduleApi(id: string, dto: UpdateScheduleCredentials): Promise<Schedule> {
     const payload = {
         ...dto,
-        day: dto.day?.toISOString(),
+        day: dto.day instanceof Date ? dto.day.toISOString() : dto.day,
     };
     const response = await api.put(`api/v1/schedule/${id}`, payload);
     return response.data;
@@ -105,7 +125,7 @@ export async function getScheduleByIdApi(id: string): Promise<Schedule> {
 export async function getSchedulesByClassOrDayApi(dto: GetScheduleDto): Promise<Schedule[]> {
     const payload = {
         ...dto,
-        day: dto.day?.toISOString(),
+        day: dto.day instanceof Date ? dto.day.toISOString() : dto.day,
     };
     const response = await api.post('api/v1/schedule/get-by-class-or-day', payload);
     return response.data;
@@ -115,8 +135,8 @@ export async function getSchedulesByClassOrDayApi(dto: GetScheduleDto): Promise<
 export async function getSchedulesByMultipleClassesApi(dto: GetScheduleByMultipleClassDto): Promise<Schedule[]> {
     const payload = {
         ...dto,
-        start_date: dto.start_date?.toISOString(),
-        end_date: dto.end_date?.toISOString(),
+        start_date: dto.start_date instanceof Date ? dto.start_date.toISOString() : dto.start_date,
+        end_date: dto.end_date instanceof Date ? dto.end_date.toISOString() : dto.end_date,
     };
     const response = await api.post('api/v1/schedule/get-by-multiple-classes', payload);
     return response.data;
@@ -125,6 +145,12 @@ export async function getSchedulesByMultipleClassesApi(dto: GetScheduleByMultipl
 // Get schedules by student (current authenticated user)
 export async function getSchedulesByStudentApi(): Promise<Schedule[]> {
     const response = await api.get('api/v1/schedule/get-by-student');
+    return response.data;
+}
+
+// Get schedules by teacher (current authenticated user)
+export async function getSchedulesByTeacherApi(): Promise<Schedule[]> {
+    const response = await api.get('api/v1/schedule/get-by-teacher');
     return response.data;
 }
 
@@ -151,7 +177,7 @@ export async function createMultipleSchedulesApi(dto: CreateMultipleSchedulesDto
     const payload = {
         schedules: dto.schedules.map(schedule => ({
             ...schedule,
-            day: schedule.day?.toISOString(),
+            day: schedule.day instanceof Date ? schedule.day.toISOString() : schedule.day,
         }))
     };
     const response = await api.post('api/v1/schedule/create-multiple', payload);

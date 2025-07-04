@@ -4,6 +4,7 @@ import TeacherLayout from '@/layout/teacher';
 import TeacherDashboard from '@/pages/teacher/teacherDashboard';
 import RollCall from '@/pages/teacher/rollcall';
 import ClassRollCall from '@/pages/teacher/classRollCall';
+import RollCallDetail from '@/pages/teacher/rollcall-detail';
 import TeacherSchedule from '@/pages/teacher/scheduleTeacher';
 import NotificationCenter from '@/pages/teacher/notificationCenter';
 
@@ -33,6 +34,11 @@ export const teacherRoute = _teacherRoute.addChildren([
         getParentRoute: () => _teacherRoute,
         path: '/rollcall/$classId',
         component: () => <ClassRollCall />,
+    }),
+    createRoute({
+        getParentRoute: () => _teacherRoute,
+        path: '/rollcall-detail/$classId',
+        component: () => <RollCallDetail />,
     }),
     createRoute({
         getParentRoute: () => _teacherRoute,

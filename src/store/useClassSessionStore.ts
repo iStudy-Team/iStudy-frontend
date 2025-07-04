@@ -14,6 +14,7 @@ import {
     deleteClassSessionApi,
     getTodaySessionsForTeacherApi,
     getUpcomingSessionsForClassApi,
+    getTotalClassSessionsCountApi
 } from '@/api/classSession';
 
 interface ClassSessionState {
@@ -28,6 +29,7 @@ interface ClassSessionState {
         total: number;
         totalPages: number;
     };
+    totalSessionsCount: number; // Total count of class sessions
 
     // Actions
     setClassSessions: (classSessions: ClassSession[]) => void;
@@ -47,6 +49,7 @@ interface ClassSessionState {
     deleteClassSession: (id: string) => Promise<boolean>;
     getTodaySessionsForTeacher: () => Promise<void>;
     getUpcomingSessionsForClass: (classId: string, limit?: number) => Promise<ClassSession[]>;
+    getTotalClassSessionsCount: () => Promise<number>;
     clearError: () => void;
     reset: () => void;
 }
@@ -63,6 +66,7 @@ const initialState = {
         total: 0,
         totalPages: 0,
     },
+    totalSessionsCount: 0, // Initialize total sessions count
 };
 
 export const useClassSessionStore = create<ClassSessionState>((set, get) => ({
@@ -292,6 +296,28 @@ export const useClassSessionStore = create<ClassSessionState>((set, get) => ({
             });
             toast.error(errorMessage);
             return [];
+        }
+    },
+
+    getTotalClassSessionsCount: async () => {
+        set({ loading: true, error: null });
+        try {
+            const totalCount = await getTotalClassSessionsCountApi();
+            console.log('Total class sessions count:', totalCount);
+            set({
+                totalSessionsCount: totalCount,
+                loading: false,
+            });
+            return totalCount;
+        } catch (error) {
+            const errorMessage =
+                (error as Error).message || 'Failed to fetch total class sessions count';
+            set({
+                error: errorMessage,
+                loading: false,
+            });
+            toast.error(errorMessage);
+            return 0;
         }
     },
 

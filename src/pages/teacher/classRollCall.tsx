@@ -30,8 +30,7 @@ import {
     Clock,
     Users,
     Download,
-    Plus,
-    ArrowLeft,
+    ChevronLeft,
     Search,
 } from 'lucide-react';
 import { useClassStore } from '@/store/useClassStore';
@@ -42,18 +41,14 @@ import { ClassStatus } from '@/api/class';
 
 interface ClassStudent {
     id: string;
-    user_id: string;
     full_name: string;
-    gender: number;
-    date_of_birth?: Date;
+    date_of_birth?: string;
+    gender?: string;
     address?: string;
-    enrollment_date?: Date;
-    status: number;
     user?: {
         id: string;
-        username?: string;
         email: string;
-        phone?: string;
+        phone: string;
         avatar?: string;
     };
 }
@@ -66,19 +61,12 @@ const ClassRollCall = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceFilter, setAttendanceFilter] = useState<string>('all');
     const [loadingStudents, setLoadingStudents] = useState(true);
-
     const {
         currentClass,
         getClassById,
         loading: classLoading,
     } = useClassStore();
-    const {
-        classSessions,
-        currentClassSession,
-        getClassSessionsByClass,
-        createClassSession,
-        loading: sessionLoading,
-    } = useClassSessionStore();
+    const { classSessions, getClassSessionsByClass } = useClassSessionStore();
     const {
         attendances,
         getAttendanceByClassSession,
@@ -93,9 +81,7 @@ const ClassRollCall = () => {
         try {
             setLoadingStudents(true);
             const response = await getStudentsByClassIdApi(classId);
-            // Extract students from the response structure
-            const studentList = response.data.map((item) => item.student);
-            setStudents(studentList);
+            setStudents(response.data);
         } catch (error) {
             console.error('Error fetching students:', error);
             setStudents([]);
@@ -118,74 +104,70 @@ const ClassRollCall = () => {
         }
     }, [selectedSession, getAttendanceByClassSession]);
 
-    const handleCreateSession = async () => {
-        if (!classId) return;
-
-        const today = new Date();
-        const sessionData = {
-            date: today.toISOString().split('T')[0],
-            startTime: '09:00',
-            endTime: '10:30',
-            classId: classId,
-            scheduleId: '', // This should come from the class schedule
-            status: 'scheduled' as const,
-            note: `Session for ${today.toLocaleDateString()}`,
-        };
-
-        const newSession = await createClassSession(sessionData);
-        if (newSession) {
-            setSelectedSession(newSession.id);
-            // Refresh sessions
-            getClassSessionsByClass(classId);
-        }
-    };
-
     const handleAttendanceChange = async (
         studentId: string,
-        status: 'present' | 'absent' | 'late' | 'excused'
+        status: 0 | 1 | 2 | 3
     ) => {
         if (!selectedSession) return;
 
         const existingAttendance = attendances.find(
-            (a) => a.studentId === studentId
+            (a) => a.student_id === studentId
         );
 
         if (existingAttendance) {
             await updateAttendance(existingAttendance.id, { status });
         } else {
             await createAttendance({
-                classSessionId: selectedSession,
-                studentId,
+                class_session_id: selectedSession,
+                student_id: studentId,
                 status,
-                note: '',
+                comment: '',
             });
         }
 
-        // Refresh attendance data
         getAttendanceByClassSession(selectedSession);
     };
 
     const getStudentAttendanceStatus = (studentId: string): string => {
-        const attendance = attendances.find((a) => a.studentId === studentId);
-        return attendance?.status || 'unmarked';
+        const attendance = attendances.find((a) => a.student_id === studentId);
+        if (!attendance) return 'unmarked';
+
+        switch (attendance.status) {
+            case 0:
+                return 'present';
+            case 1:
+                return 'absent';
+            case 2:
+                return 'late';
+            case 3:
+                return 'excused';
+            default:
+                return 'unmarked';
+        }
+    };
+
+    // Tìm session được chọn từ danh sách classSessions
+    const getSelectedSessionData = () => {
+        return classSessions.find((session) => session.id === selectedSession);
     };
 
     const exportToCSV = () => {
-        if (!currentClassSession || !students.length) return;
+        const selectedSessionData = getSelectedSessionData();
+        if (!selectedSessionData || !students.length) return;
 
         const headers = [
-            'Student Name',
-            'Student ID',
-            'Attendance Status',
-            'Date',
-            'Session',
+            'Tên học sinh',
+            'Mã học sinh',
+            'Trạng thái điểm danh',
+            'Ngày',
+            'Phiên học',
         ];
         const data = students.map((student) => [
-            student.user?.username || 'N/A',
+            student.full_name || 'N/A',
             student.id,
             getStudentAttendanceStatus(student.id),
-            currentClassSession.date,
-            `${currentClassSession.startTime} - ${currentClassSession.endTime}`,
+            selectedSessionData.date,
+            `${selectedSessionData.start_time} - ${selectedSessionData.end_time}`,
         ]);
 
         const csvContent = [headers, ...data]
@@ -196,15 +178,14 @@ const ClassRollCall = () => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `attendance_${currentClass?.name}_${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `diem_danh_${currentClass?.name}_${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         window.URL.revokeObjectURL(url);
     };
 
-    // Filter students based on search and attendance filter
     const filteredStudents = students.filter((student) => {
         const nameMatch =
-            student.user?.username
+            student.full_name
                 ?.toLowerCase()
                 .includes(searchTerm.toLowerCase()) || false;
         const attendanceStatus = getStudentAttendanceStatus(student.id);
@@ -239,7 +220,7 @@ const ClassRollCall = () => {
         return (
             <div className="container mx-auto p-6">
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-lg">Loading class details...</div>
+                    <div className="text-lg">Đang tải thông tin lớp...</div>
                 </div>
             </div>
         );
@@ -249,7 +230,9 @@ const ClassRollCall = () => {
         return (
             <div className="container mx-auto p-6">
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-lg text-red-600">Class not found</div>
+                    <div className="text-lg text-red-600">
+                        Không tìm thấy lớp học
+                    </div>
                 </div>
             </div>
         );
@@ -260,17 +243,16 @@ const ClassRollCall = () => {
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Button
-                    variant="outline"
-                    size="sm"
+                    className="cursor-pointer"
+                    variant="link"
                     onClick={() => navigate({ to: '/teacher/rollcall' })}
                 >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Classes
+                    <ChevronLeft className="size-10" />
                 </Button>
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                <div className="-ml-4">
+                    <p className="text-xl font-bold text-gray-900">
                         {currentClass.name}
-                    </h1>
+                    </p>
                     <p className="text-gray-600 mt-1">
                         {currentClass.grade_level?.name} •{' '}
                         {currentClass.academic_year?.school_year}
@@ -283,7 +265,7 @@ const ClassRollCall = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Students
+                            Tổng số học sinh
                         </CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
@@ -297,7 +279,7 @@ const ClassRollCall = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Sessions
+                            Tổng số phiên học
                         </CardTitle>
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
@@ -311,7 +293,7 @@ const ClassRollCall = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Class Status
+                            Trạng thái lớp học
                         </CardTitle>
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
@@ -319,15 +301,15 @@ const ClassRollCall = () => {
                         <Badge
                             variant={
                                 currentClass.status === ClassStatus.OPEN
-                                    ? 'default'
-                                    : 'secondary'
+                                    ? 'outline'
+                                    : 'destructive'
                             }
                         >
                             {currentClass.status === ClassStatus.OPEN
-                                ? 'Open'
+                                ? 'Mở (M)'
                                 : currentClass.status === ClassStatus.CLOSE
-                                  ? 'Closed'
-                                  : 'Completed'}
+                                  ? 'Đóng (D)'
+                                  : 'Hoàn thành (C)'}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -335,7 +317,7 @@ const ClassRollCall = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Present Today
+                            Số học sinh có mặt
                         </CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
@@ -352,23 +334,16 @@ const ClassRollCall = () => {
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <CardTitle>Attendance Management</CardTitle>
+                            <CardTitle>Quản lý điểm danh</CardTitle>
                             <CardDescription>
-                                Select a session and mark attendance
+                                Chọn một phiên học và đánh dấu điểm danh
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
-                            <Button
-                                onClick={handleCreateSession}
-                                disabled={sessionLoading}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Create Session
-                            </Button>
                             {selectedSession && (
                                 <Button onClick={exportToCSV} variant="outline">
                                     <Download className="h-4 w-4 mr-2" />
-                                    Export CSV
+                                    Xuất CSV
                                 </Button>
                             )}
                         </div>
@@ -380,14 +355,14 @@ const ClassRollCall = () => {
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
                             <label className="block text-sm font-medium mb-2">
-                                Select Session
+                                Chọn phiên học
                             </label>
                             <Select
                                 value={selectedSession}
                                 onValueChange={setSelectedSession}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Choose a session to mark attendance" />
+                                    <SelectValue placeholder="Chọn một phiên để điểm danh" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {classSessions.map((session) => (
@@ -397,9 +372,27 @@ const ClassRollCall = () => {
                                         >
                                             {new Date(
                                                 session.date
-                                            ).toLocaleDateString()}{' '}
-                                            - {session.startTime} to{' '}
-                                            {session.endTime}
+                                            ).toLocaleDateString('vi-VN')}{' '}
+                                            -{' '}
+                                            {new Date(session.start_time)
+                                                .getHours()
+                                                .toString()
+                                                .padStart(2, '0')}
+                                            :
+                                            {new Date(session.start_time)
+                                                .getMinutes()
+                                                .toString()
+                                                .padStart(2, '0')}{' '}
+                                            tới{' '}
+                                            {new Date(session.end_time)
+                                                .getHours()
+                                                .toString()
+                                                .padStart(2, '0')}
+                                            :
+                                            {new Date(session.end_time)
+                                                .getMinutes()
+                                                .toString()
+                                                .padStart(2, '0')}
                                             {session.status &&
                                                 ` (${session.status})`}
                                         </SelectItem>
@@ -416,7 +409,7 @@ const ClassRollCall = () => {
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                                     <Input
-                                        placeholder="Search students..."
+                                        placeholder="Tìm kiếm học sinh..."
                                         value={searchTerm}
                                         onChange={(e) =>
                                             setSearchTerm(e.target.value)
@@ -435,22 +428,22 @@ const ClassRollCall = () => {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">
-                                            All Students
+                                            Tất cả học sinh
                                         </SelectItem>
                                         <SelectItem value="present">
-                                            Present
+                                            Có mặt
                                         </SelectItem>
                                         <SelectItem value="absent">
-                                            Absent
+                                            Vắng mặt
                                         </SelectItem>
                                         <SelectItem value="late">
-                                            Late
+                                            Đi muộn
                                         </SelectItem>
                                         <SelectItem value="excused">
-                                            Excused
+                                            Có phép
                                         </SelectItem>
                                         <SelectItem value="unmarked">
-                                            Unmarked
+                                            Chưa điểm danh
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -465,37 +458,39 @@ const ClassRollCall = () => {
                                 <div className="font-semibold">
                                     {stats.total}
                                 </div>
-                                <div className="text-gray-600">Total</div>
+                                <div className="text-gray-600">Tổng</div>
                             </div>
                             <div className="text-center p-2 bg-green-50 rounded">
                                 <div className="font-semibold text-green-700">
                                     {stats.present}
                                 </div>
-                                <div className="text-green-600">Present</div>
+                                <div className="text-green-600">Có mặt</div>
                             </div>
                             <div className="text-center p-2 bg-red-50 rounded">
                                 <div className="font-semibold text-red-700">
                                     {stats.absent}
                                 </div>
-                                <div className="text-red-600">Absent</div>
+                                <div className="text-red-600">Vắng mặt</div>
                             </div>
                             <div className="text-center p-2 bg-yellow-50 rounded">
                                 <div className="font-semibold text-yellow-700">
                                     {stats.late}
                                 </div>
-                                <div className="text-yellow-600">Late</div>
+                                <div className="text-yellow-600">Đi muộn</div>
                             </div>
                             <div className="text-center p-2 bg-blue-50 rounded">
                                 <div className="font-semibold text-blue-700">
                                     {stats.excused}
                                 </div>
-                                <div className="text-blue-600">Excused</div>
+                                <div className="text-blue-600">Có phép</div>
                             </div>
                             <div className="text-center p-2 bg-gray-100 rounded">
                                 <div className="font-semibold text-gray-700">
                                     {stats.unmarked}
                                 </div>
-                                <div className="text-gray-600">Unmarked</div>
+                                <div className="text-gray-600">
+                                    Chưa điểm danh
+                                </div>
                             </div>
                         </div>
                     )}
@@ -506,27 +501,26 @@ const ClassRollCall = () => {
             {selectedSession && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Student Attendance</CardTitle>
+                        <CardTitle>Danh sách điểm danh</CardTitle>
                         <CardDescription>
-                            Mark attendance for {filteredStudents.length}{' '}
-                            student(s)
+                            Điểm danh cho {filteredStudents.length} học sinh
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {attendanceLoading ? (
                             <div className="flex items-center justify-center h-32">
                                 <div className="text-lg">
-                                    Loading attendance data...
+                                    Đang tải dữ liệu điểm danh...
                                 </div>
                             </div>
                         ) : (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Student Name</TableHead>
-                                        <TableHead>Student ID</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Actions</TableHead>
+                                        <TableHead>Tên học sinh</TableHead>
+                                        <TableHead>Mã học sinh</TableHead>
+                                        <TableHead>Trạng thái</TableHead>
+                                        <TableHead>Thao tác</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -539,8 +533,8 @@ const ClassRollCall = () => {
                                         return (
                                             <TableRow key={student.id}>
                                                 <TableCell className="font-medium">
-                                                    {student.user?.username ||
-                                                        'Unknown Student'}
+                                                    {student.full_name ||
+                                                        'Không rõ tên'}
                                                 </TableCell>
                                                 <TableCell>
                                                     {student.id}
@@ -565,8 +559,20 @@ const ClassRollCall = () => {
                                                     >
                                                         {attendanceStatus ===
                                                         'unmarked'
-                                                            ? 'Not Marked'
-                                                            : attendanceStatus}
+                                                            ? 'Chưa điểm danh'
+                                                            : attendanceStatus ===
+                                                                'present'
+                                                              ? 'Có mặt'
+                                                              : attendanceStatus ===
+                                                                  'absent'
+                                                                ? 'Vắng mặt'
+                                                                : attendanceStatus ===
+                                                                    'late'
+                                                                  ? 'Đi muộn'
+                                                                  : attendanceStatus ===
+                                                                      'excused'
+                                                                    ? 'Có phép'
+                                                                    : attendanceStatus}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
@@ -582,11 +588,11 @@ const ClassRollCall = () => {
                                                             onClick={() =>
                                                                 handleAttendanceChange(
                                                                     student.id,
-                                                                    'present'
+                                                                    0 // Có mặt
                                                                 )
                                                             }
                                                         >
-                                                            Present
+                                                            Có mặt
                                                         </Button>
                                                         <Button
                                                             size="sm"
@@ -599,11 +605,11 @@ const ClassRollCall = () => {
                                                             onClick={() =>
                                                                 handleAttendanceChange(
                                                                     student.id,
-                                                                    'absent'
+                                                                    1 // Vắng mặt
                                                                 )
                                                             }
                                                         >
-                                                            Absent
+                                                            Vắng mặt
                                                         </Button>
                                                         <Button
                                                             size="sm"
@@ -616,11 +622,11 @@ const ClassRollCall = () => {
                                                             onClick={() =>
                                                                 handleAttendanceChange(
                                                                     student.id,
-                                                                    'late'
+                                                                    2 // Đi muộn
                                                                 )
                                                             }
                                                         >
-                                                            Late
+                                                            Đi muộn
                                                         </Button>
                                                         <Button
                                                             size="sm"
@@ -633,11 +639,11 @@ const ClassRollCall = () => {
                                                             onClick={() =>
                                                                 handleAttendanceChange(
                                                                     student.id,
-                                                                    'excused'
+                                                                    3 // Có phép
                                                                 )
                                                             }
                                                         >
-                                                            Excused
+                                                            Có phép
                                                         </Button>
                                                     </div>
                                                 </TableCell>
@@ -654,8 +660,8 @@ const ClassRollCall = () => {
                                     <p className="text-gray-500">
                                         {searchTerm ||
                                         attendanceFilter !== 'all'
-                                            ? 'No students match the current filters.'
-                                            : 'No students enrolled in this class.'}
+                                            ? 'Không có học sinh nào phù hợp với bộ lọc hiện tại.'
+                                            : 'Không có học sinh nào trong lớp này.'}
                                     </p>
                                 </div>
                             )}
@@ -667,7 +673,7 @@ const ClassRollCall = () => {
                 <Card>
                     <CardContent className="flex items-center justify-center h-32">
                         <p className="text-gray-500">
-                            Select a session to view and mark attendance
+                            Vui lòng chọn một phiên học để xem và điểm danh
                         </p>
                     </CardContent>
                 </Card>
