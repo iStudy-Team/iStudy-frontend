@@ -6,6 +6,7 @@ import StudentLayout from '@/layout/student';
 import RollCallStudent from '@/pages/student/rollCallStudent';
 import StudentSchedule from '@/pages/student/scheduleStudent';
 import ErnollmentClass from '@/pages/student/enrollmentClass';
+import ManageProfile from '@/components/manageProfile';
 
 const _studentRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -23,6 +24,11 @@ export const studentRoute = _studentRoute.addChildren([
         getParentRoute: () => _studentRoute,
         path: '/schedule',
         component: () => <StudentSchedule />,
+    }),
+    createRoute({
+        getParentRoute: () => _studentRoute,
+        path: '/profile',
+        component: () => <ManageProfile />, // Changed from ProfileAdmin to ManageProfile
     }),
     createRoute({
         getParentRoute: () => _studentRoute,

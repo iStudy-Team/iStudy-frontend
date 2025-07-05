@@ -1,7 +1,6 @@
 import { createRoute } from '@tanstack/react-router';
 import { rootRoute } from '@/routes/__root.tsx';
 import AdminLayout from '@/layout/admin';
-import ProfileAdmin from '@/pages/admin/adminProfile';
 import ClassManagementAdmin from '@/pages/admin/classManagement';
 import AdminDashboard from '@/pages/admin/dashboardAdmin';
 import ParentManagement from '@/pages/admin/parentManagement';
@@ -65,12 +64,6 @@ export const admintRoute = _admintRoute.addChildren([
         getParentRoute: () => _admintRoute,
         path: '/bank-account',
         component: () => <BankAccountViewer />,
-    }),
-
-    createRoute({
-        getParentRoute: () => _admintRoute,
-        path: '/profile',
-        component: () => <ProfileAdmin />,
     }),
     createRoute({
         getParentRoute: () => _admintRoute,

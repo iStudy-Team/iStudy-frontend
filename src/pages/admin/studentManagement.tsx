@@ -4,7 +4,6 @@ import {
     Search,
     MoreVertical,
     Edit3,
-    Trash2,
     User,
     Calendar,
     Eye,
@@ -12,13 +11,13 @@ import {
     Users,
     Award,
     GraduationCap,
-    MapPin,
     Loader2,
     Mail,
 } from 'lucide-react';
 import { useStudentStore } from '@/store/useStudentStore';
 import { Student, StudentStatus } from '@/api/student';
 import { DialogStudentDetails } from '@/components/dialogStudentDetails';
+import { DialogUpdateStudentTuition } from '@/components/dialogUpdateStudentTuition';
 
 interface StudentCardProps {
     student: Student;
@@ -27,12 +26,7 @@ interface StudentCardProps {
     onViewDetails: (student: Student) => void;
 }
 
-const StudentCard = ({
-    student,
-    onEdit,
-    onDelete,
-    onViewDetails,
-}: StudentCardProps) => {
+const StudentCard = ({ student, onEdit, onViewDetails }: StudentCardProps) => {
     const [showDropdown, setShowDropdown] = useState(false);
 
     const getStatusColor = (status: StudentStatus) => {
@@ -94,11 +88,11 @@ const StudentCard = ({
 
     const getGenderText = (gender?: number) => {
         switch (gender) {
-            case 1:
+            case 0:
                 return 'Nam';
-            case 2:
+            case 1:
                 return 'Nữ';
-            case 3:
+            case 2:
                 return 'Khác';
             default:
                 return 'N/A';
@@ -190,17 +184,7 @@ const StudentCard = ({
                                     className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
                                 >
                                     <Edit3 className="w-4 h-4" />
-                                    <span>Chỉnh sửa</span>
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        onDelete(student.id);
-                                        setShowDropdown(false);
-                                    }}
-                                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span>Xóa</span>
+                                    <span>Chỉnh sửa học phí</span>
                                 </button>
                             </div>
                         )}
@@ -251,9 +235,7 @@ const StudentCard = ({
                         <p className="text-xs text-gray-500">Ngày nhập học</p>
                     </div>
                     <div>
-                        <p className="font-medium text-gray-900">
-                            {student.class_enrollments?.length || 0}
-                        </p>
+                        <p className="font-medium text-gray-900">0</p>
                         <p className="text-xs text-gray-500">Lớp học</p>
                     </div>
                 </div>
@@ -282,6 +264,9 @@ export default function StudentManagement() {
     const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
     const [showStudentDetailsDialog, setShowStudentDetailsDialog] =
         useState(false);
+    const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+    const [showTuitionUpdateDialog, setShowTuitionUpdateDialog] =
+        useState(false);
 
     // Fetch students when component mounts
     useEffect(() => {
@@ -289,8 +274,8 @@ export default function StudentManagement() {
     }, [getAllStudents]);
 
     const handleEdit = (student: Student) => {
-        console.log('Edit student:', student);
-        // Note: Edit functionality disabled per requirements, but API/store still supports it
+        setEditingStudent(student);
+        setShowTuitionUpdateDialog(true);
     };
 
     const handleDelete = (studentId: string) => {
@@ -446,14 +431,14 @@ export default function StudentManagement() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">
-                                    Tổng sinh viên
+                                    Nghỉ học
                                 </p>
-                                <p className="text-2xl font-bold text-orange-600">
-                                    {stats.total}
+                                <p className="text-2xl font-bold text-red-600">
+                                    {stats.inactive}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <Users className="w-6 h-6 text-orange-600" />
+                            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <AlertCircle className="w-6 h-6 text-red-600" />
                             </div>
                         </div>
                     </div>
@@ -553,6 +538,16 @@ export default function StudentManagement() {
                     setViewingStudent(null);
                 }}
                 student={viewingStudent}
+            />
+
+            {/* Student Tuition Update Dialog */}
+            <DialogUpdateStudentTuition
+                isOpen={showTuitionUpdateDialog}
+                onClose={() => {
+                    setShowTuitionUpdateDialog(false);
+                    setEditingStudent(null);
+                }}
+                student={editingStudent}
             />
         </div>
     );

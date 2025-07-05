@@ -1,10 +1,11 @@
 import { api } from './api';
+import { Student } from './student';
 
 export enum InvoiceStatusEnum {
-    PENDING = 'PENDING',
-    PAID = 'PAID',
-    OVERDUE = 'OVERDUE',
-    CANCELLED = 'CANCELLED',
+    UNPAID = 0,
+    PAID = 1,
+    OVERDUE = 2,
+    CANCELLED = 3,
 }
 
 export interface Invoice {
@@ -23,6 +24,7 @@ export interface Invoice {
     description?: string;
     created_at: Date;
     updated_at: Date;
+    student?: Student; // Optional, for populating student details
 }
 
 export type CreateInvoiceCredentials = Pick<
@@ -34,7 +36,6 @@ export type CreateInvoiceCredentials = Pick<
     | 'year'
     | 'amount'
     | 'discount_amount'
-    | 'final_amount'
     | 'issue_date'
     | 'due_date'
     | 'status'
@@ -49,7 +50,6 @@ export type CreateMultipleInvoiceCredentials = Pick<
     | 'year'
     | 'amount'
     | 'discount_amount'
-    | 'final_amount'
     | 'issue_date'
     | 'due_date'
     | 'status'
@@ -64,7 +64,9 @@ export interface SearchInvoicesDto {
 }
 
 // Create single invoice
-export async function createInvoiceApi(dto: CreateInvoiceCredentials): Promise<Invoice> {
+export async function createInvoiceApi(
+    dto: CreateInvoiceCredentials
+): Promise<Invoice> {
     const payload = {
         ...dto,
         issue_date: dto.issue_date?.toISOString(),
@@ -75,7 +77,9 @@ export async function createInvoiceApi(dto: CreateInvoiceCredentials): Promise<I
 }
 
 // Create multiple invoices for a class
-export async function createMultipleInvoicesApi(dto: CreateMultipleInvoiceCredentials): Promise<Invoice[]> {
+export async function createMultipleInvoicesApi(
+    dto: CreateMultipleInvoiceCredentials
+): Promise<Invoice[]> {
     const payload = {
         ...dto,
         issue_date: dto.issue_date?.toISOString(),
@@ -86,15 +90,29 @@ export async function createMultipleInvoicesApi(dto: CreateMultipleInvoiceCreden
 }
 
 // Get all invoices for a student
-export async function getInvoicesByStudentApi(studentId: string, searchParams?: SearchInvoicesDto): Promise<Invoice[]> {
-    const response = await api.get(`api/v1/invoice/${studentId}`, {
-        params: searchParams,
-    });
+export async function getInvoicesByStudentApi(
+    studentId: string,
+    searchParams?: SearchInvoicesDto
+): Promise<{
+    invoices: Invoice[];
+    total: number;
+    page: number;
+    limit: number;
+}> {
+    const response = await api.get(
+        `api/v1/invoice/get-by-student/${studentId}`,
+        {
+            params: searchParams,
+        }
+    );
     return response.data;
 }
 
 // Update invoice
-export async function updateInvoiceApi(id: string, dto: UpdateInvoiceCredentials): Promise<Invoice> {
+export async function updateInvoiceApi(
+    id: string,
+    dto: UpdateInvoiceCredentials
+): Promise<Invoice> {
     const payload = {
         ...dto,
         issue_date: dto.issue_date?.toISOString(),
@@ -105,7 +123,27 @@ export async function updateInvoiceApi(id: string, dto: UpdateInvoiceCredentials
 }
 
 // Get invoice by ID
-export async function getInvoiceByIdApi(id: string, studentId: string): Promise<Invoice> {
-    const response = await api.get(`api/v1/invoice/get-by-id/${id}&${studentId}`);
+export async function getInvoiceByIdApi(
+    id: string,
+    studentId: string
+): Promise<Invoice> {
+    const response = await api.get(
+        `api/v1/invoice/get-by-id/${id}/${studentId}`
+    );
+    return response.data;
+}
+
+// Get all invoices (for admin)
+export async function getAllInvoicesApi(
+    searchParams?: SearchInvoicesDto
+): Promise<{
+    invoices: Invoice[];
+    total: number;
+    page: number;
+    limit: number;
+}> {
+    const response = await api.get('api/v1/invoice/all', {
+        params: searchParams,
+    });
     return response.data;
 }

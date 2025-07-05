@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { toast } from 'sonner';
 import {
     Invoice,
+    InvoiceStatusEnum,
     CreateInvoiceCredentials,
     CreateMultipleInvoiceCredentials,
     UpdateInvoiceCredentials,
@@ -11,6 +12,7 @@ import {
     getInvoicesByStudentApi,
     updateInvoiceApi,
     getInvoiceByIdApi,
+    getAllInvoicesApi,
 } from '@/api/invoice';
 
 interface InvoiceState {
@@ -34,10 +36,18 @@ interface InvoiceState {
 
     // API Actions
     createInvoice: (dto: CreateInvoiceCredentials) => Promise<Invoice | null>;
-    createMultipleInvoices: (dto: CreateMultipleInvoiceCredentials) => Promise<Invoice[] | null>;
-    updateInvoice: (id: string, dto: UpdateInvoiceCredentials) => Promise<Invoice | null>;
+    createMultipleInvoices: (
+        dto: CreateMultipleInvoiceCredentials
+    ) => Promise<Invoice[] | null>;
+    updateInvoice: (
+        id: string,
+        dto: UpdateInvoiceCredentials
+    ) => Promise<Invoice | null>;
     getInvoiceById: (id: string, studentId: string) => Promise<Invoice | null>;
-    getInvoicesByStudent: (studentId: string, searchParams?: SearchInvoicesDto) => Promise<void>;
+    getInvoicesByStudent: (
+        studentId: string,
+        searchParams?: SearchInvoicesDto
+    ) => Promise<void>;
     getAllInvoices: () => Promise<void>;
     clearError: () => void;
     reset: () => void;
@@ -54,7 +64,7 @@ interface InvoiceState {
         totalDiscount: number;
         outstandingBalance: number;
         paidCount: number;
-        pendingCount: number;
+        unpaidCount: number;
         overdueCount: number;
     };
 }
@@ -114,17 +124,12 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
         set({ loading: true, error: null });
         try {
             const newInvoices = await createMultipleInvoicesApi(dto);
-            const { invoices } = get();
-            const currentInvoices = Array.isArray(invoices) ? invoices : [];
-            set({
-                invoices: [...newInvoices, ...currentInvoices],
-                loading: false,
-            });
-            toast.success(`${newInvoices.length} invoices created successfully`);
+            await get().getAllInvoices(); // Refresh all invoices after creation
             return newInvoices;
         } catch (error) {
             const errorMessage =
-                (error as Error).message || 'Failed to create multiple invoices';
+                (error as Error).message ||
+                'Failed to create multiple invoices';
             set({
                 error: errorMessage,
                 loading: false,
@@ -163,12 +168,10 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     },
 
     getInvoiceById: async (id, studentId) => {
-        set({ loading: true, error: null });
         try {
             const invoice = await getInvoiceByIdApi(id, studentId);
             set({
                 currentInvoice: invoice,
-                loading: false,
             });
             return invoice;
         } catch (error) {
@@ -176,7 +179,6 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
                 (error as Error).message || 'Failed to fetch invoice';
             set({
                 error: errorMessage,
-                loading: false,
             });
             toast.error(errorMessage);
             return null;
@@ -186,15 +188,20 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     getInvoicesByStudent: async (studentId, searchParams) => {
         set({ loading: true, error: null });
         try {
-            const response = await getInvoicesByStudentApi(studentId, searchParams);
-            const invoices = Array.isArray(response) ? response : [];
+            const response = await getInvoicesByStudentApi(
+                studentId,
+                searchParams
+            );
+            const invoices = Array.isArray(response.invoices) ? response.invoices : [];
             set({
                 invoices,
                 pagination: {
                     page: searchParams?.page || 1,
                     limit: searchParams?.limit || 10,
                     total: invoices.length,
-                    totalPages: Math.ceil(invoices.length / (searchParams?.limit || 10)),
+                    totalPages: Math.ceil(
+                        invoices.length / (searchParams?.limit || 10)
+                    ),
                 },
                 loading: false,
             });
@@ -212,11 +219,9 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     getAllInvoices: async () => {
         set({ loading: true, error: null });
         try {
-            // This would need to be implemented on the backend - getting all invoices
-            // For now, we'll use a placeholder implementation
-            const invoices: Invoice[] = [];
+            const invoices = await getAllInvoicesApi();
             set({
-                invoices,
+                invoices: Array.isArray(invoices.invoices) ? invoices.invoices : [],
                 loading: false,
             });
         } catch (error) {
@@ -237,46 +242,85 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
     // Computed properties for fee management
     getTotalExpectedAmount: () => {
         const { invoices } = get();
-        return (invoices || []).reduce((sum, invoice) => sum + invoice.amount, 0);
+        return (invoices || []).reduce(
+            (sum, invoice) => sum + Number(invoice.amount || 0),
+            0
+        );
     },
 
     getTotalActualAmount: () => {
         const { invoices } = get();
-        return (invoices || []).reduce((sum, invoice) => sum + (invoice.final_amount || invoice.amount), 0);
+        return (invoices || []).reduce(
+            (sum, invoice) => sum + Number(invoice.final_amount || invoice.amount || 0),
+            0
+        );
     },
 
     getTotalDiscountAmount: () => {
         const { invoices } = get();
-        return (invoices || []).reduce((sum, invoice) => sum + (invoice.discount_amount || 0), 0);
+        return (invoices || []).reduce(
+            (sum, invoice) => sum + Number(invoice.discount_amount || 0),
+            0
+        );
     },
 
     getOutstandingBalance: () => {
         const { invoices } = get();
         return (invoices || [])
-            .filter(invoice => invoice.status !== 'PAID')
-            .reduce((sum, invoice) => sum + (invoice.final_amount || invoice.amount), 0);
+            .filter((invoice) => invoice.status !== InvoiceStatusEnum.PAID)
+            .reduce(
+                (sum, invoice) =>
+                    sum + Number(invoice.final_amount || invoice.amount || 0),
+                0
+            );
     },
 
     getInvoicesByStatus: (status) => {
         const { invoices } = get();
         if (!status) return invoices || [];
-        return (invoices || []).filter(invoice => invoice.status === status);
+        const statusEnum = typeof status === 'string' ? Number(status) : status;
+        return (invoices || []).filter(
+            (invoice) => invoice.status === statusEnum
+        );
     },
 
     getFinancialSummary: () => {
         const { invoices } = get();
         const safeInvoices = invoices || [];
 
-        const expectedIncome = safeInvoices.reduce((sum, invoice) => sum + invoice.amount, 0);
-        const actualIncome = safeInvoices.reduce((sum, invoice) => sum + (invoice.final_amount || invoice.amount), 0);
-        const totalDiscount = safeInvoices.reduce((sum, invoice) => sum + (invoice.discount_amount || 0), 0);
+        const expectedIncome = safeInvoices.reduce(
+            (sum, invoice) => sum + Number(invoice.amount || 0),
+            0
+        );
+        const actualIncome = safeInvoices.reduce(
+            (sum, invoice) => sum + Number(invoice.final_amount || invoice.amount || 0),
+            0
+        );
+        const totalDiscount = safeInvoices.reduce(
+            (sum, invoice) => {
+                const discountAmount = Number(invoice.discount_amount || 0);
+                const studentDiscountPercentage = Number(invoice.student?.discount_percentage || 0);
+                return sum + discountAmount + (invoice.amount * studentDiscountPercentage) / 100;
+            },
+            0
+        );
         const outstandingBalance = safeInvoices
-            .filter(invoice => invoice.status !== 'PAID')
-            .reduce((sum, invoice) => sum + (invoice.final_amount || invoice.amount), 0);
+            .filter((invoice) => invoice.status !== InvoiceStatusEnum.PAID)
+            .reduce(
+                (sum, invoice) =>
+                    sum + Number(invoice.final_amount || invoice.amount || 0),
+                0
+            );
 
-        const paidCount = safeInvoices.filter(invoice => invoice.status === 'PAID').length;
-        const pendingCount = safeInvoices.filter(invoice => invoice.status === 'PENDING').length;
-        const overdueCount = safeInvoices.filter(invoice => invoice.status === 'OVERDUE').length;
+        const paidCount = safeInvoices.filter(
+            (invoice) => invoice.status === InvoiceStatusEnum.PAID
+        ).length;
+        const unpaidCount = safeInvoices.filter(
+            (invoice) => invoice.status === InvoiceStatusEnum.UNPAID
+        ).length;
+        const overdueCount = safeInvoices.filter(
+            (invoice) => invoice.status === InvoiceStatusEnum.OVERDUE
+        ).length;
 
         return {
             expectedIncome,
@@ -284,7 +328,7 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
             totalDiscount,
             outstandingBalance,
             paidCount,
-            pendingCount,
+            unpaidCount,
             overdueCount,
         };
     },

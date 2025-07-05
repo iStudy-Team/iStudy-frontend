@@ -70,3 +70,12 @@ export const resetPasswordApi = async (
     const response = await api.post('api/v1/auth/verify-otp', credentials);
     return response.data;
 };
+
+export const getInfoMeApi = async (): Promise<IUser> => {
+    const response = await api.get('api/v1/auth/me');
+    if (response.data) {
+        return response.data;
+    } else {
+        throw new Error('Failed to fetch user information');
+    }
+}

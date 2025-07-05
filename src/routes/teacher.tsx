@@ -7,6 +7,7 @@ import ClassRollCall from '@/pages/teacher/classRollCall';
 import RollCallDetail from '@/pages/teacher/rollcall-detail';
 import TeacherSchedule from '@/pages/teacher/scheduleTeacher';
 import NotificationCenter from '@/pages/teacher/notificationCenter';
+import ManageProfile from '@/components/manageProfile';
 
 const _teacherRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -29,6 +30,11 @@ export const teacherRoute = _teacherRoute.addChildren([
         getParentRoute: () => _teacherRoute,
         path: '/rollcall',
         component: () => <RollCall />,
+    }),
+    createRoute({
+        getParentRoute: () => _teacherRoute,
+        path: '/profile',
+        component: () => <ManageProfile />, // Changed from ProfileAdmin to ManageProfile
     }),
     createRoute({
         getParentRoute: () => _teacherRoute,

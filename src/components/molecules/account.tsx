@@ -1,56 +1,91 @@
-import { Link, useLocation, useMatch } from '@tanstack/react-router';
-import { Home, BarChart3, CreditCard, Wrench } from 'lucide-react';
+import { UserPen, LogOut } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
+import { Button } from '../ui/button';
+import { useNavigate } from '@tanstack/react-router';
 
 interface MenuItemType {
     name: string;
     icon: React.ComponentType<{ size?: number; className?: string }>;
     color: string;
-    path: string;
+    value: string;
 }
 
 interface MenuItemProps {
     item: MenuItemType;
-    isActive: boolean;
 }
 
-const MenuItem = ({ item, isActive }: MenuItemProps) => (
+const MenuItem = ({ item }: MenuItemProps) => (
     <div
-        className={`flex items-center space-x-3 px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
-            isActive
-                ? 'bg-white shadow-xs text-gray-700'
-                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-        }`}
+        className={`flex items-center space-x-3 px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 ${'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
     >
         <div
             className={`flex items-center justify-center h-[30px] w-[30px] ${
-                isActive ? 'bg-[#4fd1c5] rounded-[12px]' : item.color
+                item.color
             }`}
         >
-            <item.icon
-                size={20}
-                className={`h-5 w-5 ${isActive ? 'text-white' : item.color} `}
-            />
+            <item.icon size={20} className={`h-5 w-5 ${item.color} `} />
         </div>
         <span className="font-medium text-sm">{item.name}</span>
     </div>
 );
+
 export default function Account() {
-    const location = useLocation();
-    const currentPath = location.pathname;
-    const menuItems: MenuItemType[] = [
+    const { logout, user } = useAuthStore();
+    const navigate = useNavigate();
+
+    const allMenuItems: MenuItemType[] = [
         {
             name: 'Hồ Sơ',
-            icon: Wrench,
+            icon: UserPen,
             color: 'text-teal-400',
-            path: '/admin/profile',
+            value: 'profile',
         },
         {
             name: 'Đăng Xuất',
-            icon: Wrench,
+            icon: LogOut,
             color: 'text-teal-400',
-            path: '/admin/bank-account-manage',
+            value: 'logout',
         },
     ];
+
+    // Filter menu items based on user role
+    const menuItems = allMenuItems.filter((item) => {
+        if (item.value === 'profile' && user?.role === 4) {
+            return false; // Hide profile for admin
+        }
+        return true;
+    });
+
+    function onClick(value: string) {
+        if (value === 'logout') {
+            logout();
+            navigate({ to: '/' });
+        } else {
+            const role = user?.role;
+            let path;
+            switch (role) {
+                case 1:
+                    path = 'teacher';
+                    break;
+                case 2:
+                    path = 'student';
+                    break;
+                case 3:
+                    path = 'parent';
+                    break;
+                case 4:
+                    path = '';
+                    break;
+                default:
+                    path = '';
+                    break;
+            }
+            if (path && path !== '') {
+                navigate({ to: `/${path}/profile` });
+            }
+        }
+    }
+
     return (
         <div className="">
             {/* Header */}
@@ -63,11 +98,15 @@ export default function Account() {
             </div>
             <div className="flex-1 p-4 space-y-1">
                 {menuItems.map((item) => {
-                    const isActive = currentPath === item.path;
                     return (
-                        <Link to={item.path} key={item.name}>
-                            <MenuItem item={item} isActive={isActive} />
-                        </Link>
+                        <Button
+                            key={item.name}
+                            onClick={() => onClick(item.value)}
+                            variant="ghost"
+                            className="w-full justify-start p-0 h-auto"
+                        >
+                            <MenuItem item={item} />
+                        </Button>
                     );
                 })}
             </div>

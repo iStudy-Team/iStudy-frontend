@@ -6,6 +6,7 @@ import {
     forgotPasswordApi,
     resetPasswordApi,
 } from '@/api/auth';
+import { updateUserApi, UpdateUserDto } from '@/api/user';
 import { LOCALSTORAGE_KEY } from '@/types/localstorage';
 import {
     CredentialsLogin,
@@ -24,6 +25,8 @@ interface AuthState {
     signup: (credentials: CredentialsSignup) => Promise<void>;
     forgotPassword: (credentials: ForgotPassWordCredentials) => Promise<void>;
     resetPassword: (credentials: ResetPasswordCredentials) => Promise<void>;
+    getInfoMe: () => Promise<IUser>;
+    updateUser: (dto: UpdateUserDto) => Promise<IUser | null>;
     logout: () => void;
 }
 
@@ -103,6 +106,50 @@ export const useAuthStore = create<AuthState>((set) => ({
             toast.error((error as Error).message || 'Reset password error');
             console.error('Reset password error:', error);
             throw error;
+        }
+    },
+
+    getInfoMe: async () => {
+        try {
+            const user = JSON.parse(
+                localStorage.getItem(LOCALSTORAGE_KEY.USER) || 'null'
+            );
+            console.log('Retrieved user from local storage:', user);
+            if (user && typeof user === 'object' && Object.keys(user).length > 0) {
+                set({ user, isAuthenticated: true });
+                return user;
+            } else {
+                throw new Error('User not found in local storage');
+            }
+        } catch (error) {
+            toast.error((error as Error).message || 'Get user info error');
+            console.error('Get user info error:', error);
+            throw error;
+        }
+    },
+
+    updateUser: async (dto) => {
+        try {
+            const { user } = useAuthStore.getState();
+            if (!user?.id) {
+                throw new Error('User not found');
+            }
+
+            const updatedUser = await updateUserApi(user.id.toString(), dto);
+
+            // Update localStorage and state
+            localStorage.setItem(
+                LOCALSTORAGE_KEY.USER,
+                JSON.stringify(updatedUser)
+            );
+            set({ user: updatedUser });
+
+            toast.success('User information updated successfully');
+            return updatedUser;
+        } catch (error) {
+            toast.error((error as Error).message || 'Failed to update user');
+            console.error('Update user error:', error);
+            return null;
         }
     },
 

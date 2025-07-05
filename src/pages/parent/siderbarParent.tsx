@@ -1,18 +1,5 @@
 import React from 'react';
-import {
-    Home,
-    BarChart3,
-    CreditCard,
-    Wrench,
-    User,
-    Users,
-    School,
-    UserPlus,
-    DollarSign,
-    Wallet,
-    Calendar,
-    Bell,
-} from 'lucide-react';
+import { Home, DollarSign } from 'lucide-react';
 import Account from '../../components/molecules/account';
 import { Link, useLocation } from '@tanstack/react-router';
 
@@ -58,12 +45,6 @@ export default function SidebarParent() {
             icon: Home,
             color: 'text-teal-400',
             path: '/parent',
-        },
-        {
-            name: 'Thời Khóa Biểu',
-            icon: Calendar,
-            color: 'text-teal-400',
-            path: '/parent/child-schedule',
         },
         {
             name: 'Học Phí',

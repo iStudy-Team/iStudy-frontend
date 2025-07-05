@@ -20,6 +20,7 @@ export interface IUser {
     createdAt: string;
     updatedAt: string;
     status: USER_STATUS;
+    avatar?: string;
 }
 
 export type User = {

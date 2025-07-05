@@ -55,7 +55,7 @@ export function DialogInvoice({
         final_amount: 0,
         issue_date: '',
         due_date: '',
-        status: InvoiceStatusEnum.PENDING,
+        status: InvoiceStatusEnum.UNPAID,
         description: '',
     });
 
@@ -95,7 +95,7 @@ export function DialogInvoice({
                 final_amount: 0,
                 issue_date: '',
                 due_date: '',
-                status: InvoiceStatusEnum.PENDING,
+                status: InvoiceStatusEnum.UNPAID,
                 description: '',
             });
         }
@@ -343,14 +343,15 @@ export function DialogInvoice({
                                     onChange={(e) =>
                                         setFormData({
                                             ...formData,
-                                            status: e.target
-                                                .value as InvoiceStatusEnum,
+                                            status: Number(
+                                                e.target.value
+                                            ) as InvoiceStatusEnum,
                                         })
                                     }
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
                                 >
-                                    <option value={InvoiceStatusEnum.PENDING}>
-                                        Chờ thanh toán
+                                    <option value={InvoiceStatusEnum.UNPAID}>
+                                        Chưa thanh toán
                                     </option>
                                     <option value={InvoiceStatusEnum.PAID}>
                                         Đã thanh toán

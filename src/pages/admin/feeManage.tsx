@@ -8,13 +8,13 @@ import {
     Calendar,
     Download,
     Filter,
-    Plus,
+    Users,
 } from 'lucide-react';
 import { useInvoiceStore } from '@/store/useInvoiceStore';
 import { useStudentStore } from '@/store/useStudentStore';
 import { useClassStore } from '@/store/useClassStore';
-import { DialogInvoice } from '@/components/dialogInvoice';
-import { Invoice } from '@/api/invoice';
+import { DialogCreateClassTuition } from '@/components/dialogCreateClassTuition';
+import { Invoice, InvoiceStatusEnum } from '@/api/invoice';
 
 // Extended interface for display purposes
 interface InvoiceWithStudentClass extends Invoice {
@@ -30,6 +30,7 @@ const FeeManage = () => {
     const { classes, getAllClasses } = useClassStore();
 
     const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+    const [showClassTuitionDialog, setShowClassTuitionDialog] = useState(false);
 
     // State cho thống kê tài chính
     const [timeRange, setTimeRange] = useState('month');
@@ -90,10 +91,8 @@ const FeeManage = () => {
     ) => {
         const invoice = invoices.find((inv) => inv.id === invoiceId);
         if (invoice) {
-            const finalAmount = invoice.amount - discountAmount;
             await updateInvoice(invoiceId, {
                 discount_amount: discountAmount,
-                final_amount: Math.max(0, finalAmount),
             });
             // Refresh data
             getAllInvoices();
@@ -117,9 +116,9 @@ const FeeManage = () => {
         }
     };
 
-    const handleDialogSuccess = () => {
+    const handleClassTuitionSuccess = () => {
         getAllInvoices();
-        setEditingInvoice(null);
+        setShowClassTuitionDialog(false);
     };
 
     return (
@@ -149,15 +148,55 @@ const FeeManage = () => {
                             Quản lý học phí
                         </h1>
 
-                        <DialogInvoice onSuccess={handleDialogSuccess}>
-                            <button className="flex items-center space-x-2 bg-teal-400 text-white px-6 py-2 rounded-lg hover:bg-teal-500 transition-colors cursor-pointer">
-                                <Plus className="w-5 h-5" />
-                                <span>Tạo Hóa Đơn Mới</span>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => setShowClassTuitionDialog(true)}
+                                className="flex items-center space-x-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                                <Users className="w-5 h-5" />
+                                <span>Tạo Học Phí Lớp</span>
                             </button>
-                        </DialogInvoice>
+                        </div>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+                    {/* Tổng kết học phí */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                            <h3 className="text-sm font-medium text-gray-500 mb-2">
+                                Tổng học phí gốc
+                            </h3>
+                            <p className="text-2xl font-bold">
+                                {financialSummary.expectedIncome.toLocaleString(
+                                    'vi-VN'
+                                )}
+                                ₫
+                            </p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                            <h3 className="text-sm font-medium text-gray-500 mb-2">
+                                Tổng giảm giá
+                            </h3>
+                            <p className="text-2xl font-bold text-red-600">
+                                {financialSummary.totalDiscount.toLocaleString(
+                                    'vi-VN'
+                                )}
+                                ₫
+                            </p>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-xl shadow-sm border border-green-200">
+                            <h3 className="text-sm font-medium text-gray-500 mb-2">
+                                Tổng thực thu
+                            </h3>
+                            <p className="text-2xl font-bold text-green-600">
+                                {financialSummary.actualIncome.toLocaleString(
+                                    'vi-VN'
+                                )}
+                                ₫
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden mt-6">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -251,26 +290,28 @@ const FeeManage = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
                                                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                    invoice.status === 'PAID'
+                                                    invoice.status ===
+                                                    InvoiceStatusEnum.PAID
                                                         ? 'bg-green-100 text-green-700'
                                                         : invoice.status ===
-                                                            'OVERDUE'
+                                                            InvoiceStatusEnum.OVERDUE
                                                           ? 'bg-red-100 text-red-700'
                                                           : invoice.status ===
-                                                              'CANCELLED'
+                                                              InvoiceStatusEnum.CANCELLED
                                                             ? 'bg-gray-100 text-gray-700'
                                                             : 'bg-yellow-100 text-yellow-700'
                                                 }`}
                                             >
-                                                {invoice.status === 'PAID'
+                                                {invoice.status ===
+                                                InvoiceStatusEnum.PAID
                                                     ? 'Đã thanh toán'
                                                     : invoice.status ===
-                                                        'OVERDUE'
+                                                        InvoiceStatusEnum.OVERDUE
                                                       ? 'Quá hạn'
                                                       : invoice.status ===
-                                                          'CANCELLED'
+                                                          InvoiceStatusEnum.CANCELLED
                                                         ? 'Đã hủy'
-                                                        : 'Chờ thanh toán'}
+                                                        : 'Chưa thanh toán'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -315,43 +356,6 @@ const FeeManage = () => {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
-
-                    {/* Tổng kết học phí */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                            <h3 className="text-sm font-medium text-gray-500 mb-2">
-                                Tổng học phí gốc
-                            </h3>
-                            <p className="text-2xl font-bold">
-                                {financialSummary.expectedIncome.toLocaleString(
-                                    'vi-VN'
-                                )}
-                                ₫
-                            </p>
-                        </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                            <h3 className="text-sm font-medium text-gray-500 mb-2">
-                                Tổng giảm giá
-                            </h3>
-                            <p className="text-2xl font-bold text-red-600">
-                                {financialSummary.totalDiscount.toLocaleString(
-                                    'vi-VN'
-                                )}
-                                ₫
-                            </p>
-                        </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-green-200 bg-green-50">
-                            <h3 className="text-sm font-medium text-gray-500 mb-2">
-                                Tổng thực thu
-                            </h3>
-                            <p className="text-2xl font-bold text-green-600">
-                                {financialSummary.actualIncome.toLocaleString(
-                                    'vi-VN'
-                                )}
-                                ₫
-                            </p>
-                        </div>
                     </div>
                 </div>
             )}
@@ -590,7 +594,8 @@ const FeeManage = () => {
                                                     ₫
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-green-600">
-                                                    {invoice.status === 'PAID'
+                                                    {invoice.status ===
+                                                    InvoiceStatusEnum.PAID
                                                         ? (
                                                               invoice.final_amount ||
                                                               invoice.amount
@@ -601,7 +606,8 @@ const FeeManage = () => {
                                                     ₫
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-red-600">
-                                                    {invoice.status !== 'PAID'
+                                                    {invoice.status !==
+                                                    InvoiceStatusEnum.PAID
                                                         ? (
                                                               invoice.final_amount ||
                                                               invoice.amount
@@ -615,27 +621,27 @@ const FeeManage = () => {
                                                     <span
                                                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                                                             invoice.status ===
-                                                            'PAID'
+                                                            InvoiceStatusEnum.PAID
                                                                 ? 'bg-green-100 text-green-700'
                                                                 : invoice.status ===
-                                                                    'OVERDUE'
+                                                                    InvoiceStatusEnum.OVERDUE
                                                                   ? 'bg-red-100 text-red-700'
                                                                   : invoice.status ===
-                                                                      'CANCELLED'
+                                                                      InvoiceStatusEnum.CANCELLED
                                                                     ? 'bg-gray-100 text-gray-700'
                                                                     : 'bg-yellow-100 text-yellow-700'
                                                         }`}
                                                     >
                                                         {invoice.status ===
-                                                        'PAID'
+                                                        InvoiceStatusEnum.PAID
                                                             ? 'Đã thanh toán'
                                                             : invoice.status ===
-                                                                'OVERDUE'
+                                                                InvoiceStatusEnum.OVERDUE
                                                               ? 'Quá hạn'
                                                               : invoice.status ===
-                                                                  'CANCELLED'
+                                                                  InvoiceStatusEnum.CANCELLED
                                                                 ? 'Đã hủy'
-                                                                : 'Chờ thanh toán'}
+                                                                : 'Chưa thanh toán'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -643,13 +649,13 @@ const FeeManage = () => {
                                                         <div
                                                             className="bg-blue-600 h-2 rounded-full"
                                                             style={{
-                                                                width: `${invoice.status === 'PAID' ? 100 : 0}%`,
+                                                                width: `${invoice.status === InvoiceStatusEnum.PAID ? 100 : 0}%`,
                                                             }}
                                                         ></div>
                                                     </div>
                                                     <div className="text-xs text-right mt-1">
                                                         {invoice.status ===
-                                                        'PAID'
+                                                        InvoiceStatusEnum.PAID
                                                             ? 100
                                                             : 0}
                                                         %
@@ -664,6 +670,13 @@ const FeeManage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Dialog for creating class tuition */}
+            <DialogCreateClassTuition
+                isOpen={showClassTuitionDialog}
+                onClose={() => setShowClassTuitionDialog(false)}
+                onSuccess={handleClassTuitionSuccess}
+            />
         </div>
     );
 };

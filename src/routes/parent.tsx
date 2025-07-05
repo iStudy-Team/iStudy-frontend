@@ -2,8 +2,8 @@ import { createRoute } from '@tanstack/react-router';
 import { rootRoute } from '@/routes/__root.tsx';
 import ParentLayout from '@/layout/parent';
 import FeeParent from '@/pages/parent/fee';
-import StudentDashboard from '@/pages/student/studentDashboard';
-import StudentSchedule from '@/pages/student/scheduleStudent';
+import ManageProfile from '@/components/manageProfile';
+import ParentDashboard from '@/pages/parent/parentDashboard';
 
 const _parentRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -15,7 +15,7 @@ export const parentRoute = _parentRoute.addChildren([
     createRoute({
         getParentRoute: () => _parentRoute,
         path: '/',
-        component: () => <StudentDashboard />,
+        component: () => <ParentDashboard />,
     }),
     createRoute({
         getParentRoute: () => _parentRoute,
@@ -24,7 +24,7 @@ export const parentRoute = _parentRoute.addChildren([
     }),
     createRoute({
         getParentRoute: () => _parentRoute,
-        path: '/child-schedule',
-        component: () => <StudentSchedule />,
+        path: '/profile',
+        component: () => <ManageProfile />, // Changed from ProfileAdmin to ManageProfile
     }),
 ]);
